@@ -8,6 +8,9 @@ import ResumePreview from '@/components/ResumePreview'
 import JobDescription from '@/components/JobDescription'
 import { supabase } from '@/lib/supabase'
 
+// Disable static generation for this page
+export const dynamic = 'force-dynamic'
+
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()

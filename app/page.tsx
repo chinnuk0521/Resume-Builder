@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/AuthProvider'
 import Link from 'next/link'
 
+// Disable static generation for this page
+export const dynamic = 'force-dynamic'
+
 export default function LandingPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
