@@ -30,7 +30,9 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
 
   // Form state
   const [formData, setFormData] = useState({
-    name: '',
+    first_name: '',
+    last_name: '',
+    middle_name: '',
     email: '',
     phone: '',
     linkedin: '',
