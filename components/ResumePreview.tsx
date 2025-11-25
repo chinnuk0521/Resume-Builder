@@ -87,10 +87,10 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
         resume += `${edu.university || 'University'}\n\n`
         // Degree
         resume += `${edu.degree || 'Degree'}\n\n`
-        // Location and years
+        // Years and location - will be right-aligned in PDF
         const details: string[] = []
-        if (edu.location) details.push(edu.location)
         if (edu.years) details.push(edu.years)
+        if (edu.location) details.push(edu.location)
         if (details.length > 0) {
           resume += `${details.join(' | ')}\n\n`
         }
@@ -297,6 +297,25 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
                         </span>
                       )
                     })}
+                  </div>
+                )
+              }
+              
+              // Check if it's a date/location line that should be right-aligned
+              // (follows a company or university name)
+              const isDateLocation = (line.match(/\w+\s+\d{4}\s*[-–—]/) || 
+                                     line.match(/\d{4}\s*[-–—]/) ||
+                                     (line.includes('|') && line.match(/\d{4}/)))
+              const prevLine = idx > 0 ? resumeText.split('\n')[idx - 1] : ''
+              const isAfterCompany = prevLine && 
+                                    !prevLine.includes('—') && 
+                                    !prevLine.includes('•') &&
+                                    !prevLine.match(/^(PROFESSIONAL SUMMARY|WORK EXPERIENCE|EXPERIENCE|EDUCATION|TECHNICAL SKILLS|SKILLS|ACHIEVEMENTS|PROJECTS|CERTIFICATIONS|LINKS)$/)
+              
+              if (isDateLocation && isAfterCompany) {
+                return (
+                  <div key={idx} className="whitespace-pre-wrap text-right">
+                    {line || '\u00A0'}
                   </div>
                 )
               }

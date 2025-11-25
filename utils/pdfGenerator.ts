@@ -74,6 +74,11 @@ export async function generatePDF(textContent: string) {
     const bulletIndent = 12
     const minBottomMargin = 72 // Minimum space at bottom before new page
 
+    // Track context for right-alignment
+    let currentSection = ''
+    let previousLineWasCompany = false
+    let previousLineWasUniversity = false
+
     let i = 0
     while (i < lines.length) {
       const line = lines[i]
@@ -230,6 +235,9 @@ export async function generatePDF(textContent: string) {
         'ACHIEVEMENTS', 'PROJECTS', 'CERTIFICATIONS', 'LINKS'
       ]
       if (line === line.toUpperCase() && sectionHeaders.includes(line)) {
+        currentSection = line
+        previousLineWasCompany = false
+        previousLineWasUniversity = false
         yPosition -= sectionSpacing
         currentPage.drawText(line, {
           x: MARGIN,
@@ -243,12 +251,61 @@ export async function generatePDF(textContent: string) {
         continue
       }
 
-      // Check if it's a company name (bold, followed by job title on next line)
-      // Pattern: "COMPANY NAME" or "COMPANY NAME — Job Title"
+      // Check if it's a company name (in WORK EXPERIENCE section)
+      if ((currentSection === 'WORK EXPERIENCE' || currentSection === 'EXPERIENCE') && 
+          !line.includes('—') && !line.includes('–') && 
+          !line.startsWith('•') && 
+          !line.match(/\w+\s+\d{4}\s*[-–—]/) &&
+          !line.match(/\d{4}\s*[-–—]/) &&
+          previousLineWasCompany === false &&
+          i > 0 && lines[i-1] !== '' &&
+          !sectionHeaders.includes(lines[i-1])) {
+        // This is likely a company name
+        previousLineWasCompany = true
+        previousLineWasUniversity = false
+        currentPage.drawText(line, {
+          x: MARGIN,
+          y: yPosition,
+          size: fontSize + 1,
+          font: boldFont,
+          color: rgb(0, 0, 0),
+        })
+        yPosition -= lineHeight + 2
+        i++
+        continue
+      }
+
+      // Check if it's a university name (in EDUCATION section)
+      if (currentSection === 'EDUCATION' && 
+          !line.includes('—') && !line.includes('–') && 
+          !line.startsWith('•') && 
+          !line.match(/\w+\s+\d{4}\s*[-–—]/) &&
+          !line.match(/\d{4}\s*[-–—]/) &&
+          previousLineWasUniversity === false &&
+          i > 0 && lines[i-1] !== '' &&
+          !sectionHeaders.includes(lines[i-1])) {
+        // This is likely a university name
+        previousLineWasUniversity = true
+        previousLineWasCompany = false
+        currentPage.drawText(line, {
+          x: MARGIN,
+          y: yPosition,
+          size: fontSize + 1,
+          font: boldFont,
+          color: rgb(0, 0, 0),
+        })
+        yPosition -= lineHeight + 2
+        i++
+        continue
+      }
+
+      // Check if it's a company name with em dash (old format)
       if (line.includes('—') || line.includes('–')) {
         const parts = line.split(/[—–]/).map(p => p.trim())
         if (parts.length >= 2) {
           // Company name in bold
+          previousLineWasCompany = true
+          previousLineWasUniversity = false
           currentPage.drawText(parts[0], {
             x: MARGIN,
             y: yPosition,
@@ -265,6 +322,7 @@ export async function generatePDF(textContent: string) {
               currentPage = newPage
               yPosition = A4_HEIGHT - MARGIN
             }
+            previousLineWasCompany = false
             currentPage.drawText(parts[1], {
               x: MARGIN,
               y: yPosition,
@@ -290,15 +348,33 @@ export async function generatePDF(textContent: string) {
       }
 
       // Check if it's a date range (format: "Jan 2025 - Sept 2025" or "Aug 2019 - May 2023")
+      // Or location/years (format: "2019 - 2023 | Location" or "Location | 2019 - 2023")
       if (line.match(/\w+\s+\d{4}\s*[-–—]\s*(\w+\s+\d{4}|present|current)/i) || 
-          line.match(/\d{4}\s*[-–—]\s*(\d{4}|present|current)/i)) {
-        currentPage.drawText(line, {
-          x: MARGIN,
-          y: yPosition,
-          size: fontSize,
-          font: font,
-          color: rgb(0, 0, 0),
-        })
+          line.match(/\d{4}\s*[-–—]\s*(\d{4}|present|current)/i) ||
+          (line.includes('|') && (line.match(/\d{4}/) || line.match(/present|current/i)))) {
+        // Right-align if it follows a company or university name
+        if (previousLineWasCompany || previousLineWasUniversity) {
+          const textWidth = font.widthOfTextAtSize(line, fontSize)
+          const rightX = A4_WIDTH - MARGIN - textWidth
+          currentPage.drawText(line, {
+            x: rightX,
+            y: yPosition,
+            size: fontSize,
+            font: font,
+            color: rgb(0, 0, 0),
+          })
+          previousLineWasCompany = false
+          previousLineWasUniversity = false
+        } else {
+          // Left-align for other cases
+          currentPage.drawText(line, {
+            x: MARGIN,
+            y: yPosition,
+            size: fontSize,
+            font: font,
+            color: rgb(0, 0, 0),
+          })
+        }
         yPosition -= lineHeight + paragraphSpacing
         i++
         continue
