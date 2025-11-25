@@ -38,16 +38,40 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
                       'Your Name'
     resume += `${fullName.toUpperCase()}\n\n`
 
-    // Contact
+    // Contact - format with labels for links
     const contactParts: string[] = []
     if (dataToUse.profile?.email) contactParts.push(dataToUse.profile.email)
     if (dataToUse.profile?.phone) contactParts.push(dataToUse.profile.phone)
-    if (dataToUse.profile?.linkedin) contactParts.push(dataToUse.profile.linkedin)
-    if (dataToUse.profile?.portfolio) contactParts.push(dataToUse.profile.portfolio)
-    if (dataToUse.profile?.github) contactParts.push(dataToUse.profile.github)
+    
+    // Store URLs separately for hyperlinks, but show labels in text
+    const contactInfo: { text: string, url?: string }[] = []
+    if (dataToUse.profile?.email) contactInfo.push({ text: dataToUse.profile.email })
+    if (dataToUse.profile?.phone) contactInfo.push({ text: dataToUse.profile.phone })
+    if (dataToUse.profile?.linkedin) {
+      const linkedinUrl = dataToUse.profile.linkedin.includes('http') 
+        ? dataToUse.profile.linkedin 
+        : `https://${dataToUse.profile.linkedin}`
+      contactInfo.push({ text: 'LinkedIn', url: linkedinUrl })
+    }
+    if (dataToUse.profile?.portfolio) {
+      const portfolioUrl = dataToUse.profile.portfolio.includes('http') 
+        ? dataToUse.profile.portfolio 
+        : `https://${dataToUse.profile.portfolio}`
+      contactInfo.push({ text: 'Portfolio', url: portfolioUrl })
+    }
+    if (dataToUse.profile?.github) {
+      const githubUrl = dataToUse.profile.github.includes('http') 
+        ? dataToUse.profile.github 
+        : `https://${dataToUse.profile.github}`
+      contactInfo.push({ text: 'GitHub', url: githubUrl })
+    }
 
-    if (contactParts.length > 0) {
-      resume += `${contactParts.join(' | ')}\n\n`
+    if (contactInfo.length > 0) {
+      // Format: email | phone | LinkedIn | Portfolio | GitHub
+      // Store URLs in a special format for PDF generator to parse
+      const contactText = contactInfo.map(ci => ci.text).join(' | ')
+      const contactUrls = contactInfo.filter(ci => ci.url).map(ci => `${ci.text}::${ci.url}`).join('||')
+      resume += `${contactText}${contactUrls ? `||URLS:${contactUrls}` : ''}\n\n`
     }
 
     // Professional Summary
@@ -197,17 +221,17 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
           )}
         </div>
       </div>
-      <div className="border-t border-gray-200 bg-gray-50 p-6 overflow-y-auto">
+      <div className="border-t border-gray-200 bg-gray-50 p-8 overflow-y-auto">
         {/* A4-sized preview container */}
         <div className="mx-auto bg-white shadow-lg" style={{
           width: '100%',
           maxWidth: '595px', // A4 width in pixels (scaled for screen)
           minHeight: '842px', // A4 height in pixels (scaled for screen)
           aspectRatio: `${210 / 297}`, // A4 aspect ratio
-          padding: '72px', // 1 inch margins (25mm)
+          padding: '80px', // Increased padding for less congestion
           boxSizing: 'border-box',
           fontSize: '10px',
-          lineHeight: '12px',
+          lineHeight: '14px', // Increased line height
           fontFamily: 'monospace'
         }}>
           <div className="text-gray-800 leading-relaxed" style={{
@@ -232,25 +256,28 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
               
               // Check if it's contact info
               if (line.includes('@') || line.includes('|') || line.match(/linkedin|github|portfolio/i)) {
-                const parts = line.split('|').map(p => p.trim())
+                // Parse URLs from special format if present
+                const urlMatch = line.match(/\|\|URLS:(.+)$/)
+                const urlMap: { [key: string]: string } = {}
+                let displayLine = line
+                
+                if (urlMatch) {
+                  displayLine = line.replace(/\|\|URLS:.*$/, '')
+                  const urlPairs = urlMatch[1].split('||')
+                  urlPairs.forEach(pair => {
+                    const [label, url] = pair.split('::')
+                    if (label && url) {
+                      urlMap[label] = url
+                    }
+                  })
+                }
+                
+                const parts = displayLine.split('|').map(p => p.trim())
                 return (
-                  <div key={idx} className="text-center mb-4">
+                  <div key={idx} className="text-center mb-6">
                     {parts.map((part, partIdx) => {
-                      // Check if it's a URL
-                      const isLinkedIn = part.toLowerCase().includes('linkedin')
-                      const isGitHub = part.toLowerCase().includes('github')
-                      const isPortfolio = part.toLowerCase().includes('portfolio') || 
-                                        (!part.includes('@') && !part.match(/^\d/) && 
-                                         (part.includes('.com') || part.includes('.net') || part.includes('.org')))
-                      
-                      let url = ''
-                      if (isLinkedIn) {
-                        url = part.includes('http') ? part : `https://${part.replace(/^linkedin\.com\/in\//, 'linkedin.com/in/')}`
-                      } else if (isGitHub) {
-                        url = part.includes('http') ? part : `https://${part}`
-                      } else if (isPortfolio) {
-                        url = part.includes('http') ? part : `https://${part}`
-                      }
+                      // Check if this part has a URL mapping
+                      const url = urlMap[part]
                       
                       return (
                         <span key={partIdx}>
@@ -259,14 +286,14 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
                               href={url} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline"
+                              className="text-blue-600 hover:underline font-medium"
                             >
                               {part}
                             </a>
                           ) : (
                             <span>{part}</span>
                           )}
-                          {partIdx < parts.length - 1 && <span> | </span>}
+                          {partIdx < parts.length - 1 && <span className="mx-2"> | </span>}
                         </span>
                       )
                     })}

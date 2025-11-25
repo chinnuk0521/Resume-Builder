@@ -116,11 +116,30 @@ export async function generatePDF(textContent: string) {
 
       // Check if it's contact info (contains email, phone, or separators)
       if (line.includes('@') || line.includes('|') || line.match(/linkedin|github|portfolio/i)) {
-        // Extract URLs for hyperlinks
-        const urls = extractUrls(line)
+        // Parse URLs from special format if present (||URLS:LinkedIn::url||GitHub::url)
+        const urlMatch = line.match(/\|\|URLS:(.+)$/)
+        const urlMap: { [key: string]: string } = {}
+        let displayLine = line
+        
+        if (urlMatch) {
+          displayLine = line.replace(/\|\|URLS:.*$/, '')
+          const urlPairs = urlMatch[1].split('||')
+          urlPairs.forEach(pair => {
+            const [label, url] = pair.split('::')
+            if (label && url) {
+              urlMap[label] = url
+            }
+          })
+        } else {
+          // Fallback: extract URLs from text
+          const urls = extractUrls(line)
+          if (urls.linkedin) urlMap['LinkedIn'] = urls.linkedin
+          if (urls.github) urlMap['GitHub'] = urls.github
+          if (urls.portfolio) urlMap['Portfolio'] = urls.portfolio
+        }
         
         // Split contact line by | to handle individual links
-        const parts = line.split('|').map(p => p.trim())
+        const parts = displayLine.split('|').map(p => p.trim())
         
         // Calculate total width to center the entire line
         let totalWidth = 0
@@ -138,24 +157,9 @@ export async function generatePDF(textContent: string) {
           const part = parts[partIdx]
           const partWidth = font.widthOfTextAtSize(part, fontSize)
           
-          // Check if this part is a URL that should be a hyperlink
-          let isLink = false
-          let linkUrl = ''
-          
-          if (part.toLowerCase().includes('linkedin') && urls.linkedin) {
-            isLink = true
-            linkUrl = urls.linkedin
-          } else if (part.toLowerCase().includes('github') && urls.github) {
-            isLink = true
-            linkUrl = urls.github
-          } else if (urls.portfolio) {
-            // Check if part contains portfolio URL
-            const portfolioText = urls.portfolio.replace('https://', '').replace('http://', '')
-            if (part.includes(portfolioText) || part.toLowerCase().includes('portfolio')) {
-              isLink = true
-              linkUrl = urls.portfolio
-            }
-          }
+          // Check if this part has a URL mapping (LinkedIn, GitHub, Portfolio)
+          const isLink = urlMap[part] !== undefined
+          const linkUrl = urlMap[part]
           
           // Draw the text (blue for links, black for others)
           currentPage.drawText(part, {
@@ -214,7 +218,7 @@ export async function generatePDF(textContent: string) {
           annotations.length = 0 // Clear after adding
         }
         
-        yPosition -= lineHeight + 8
+        yPosition -= lineHeight + 12 // Increased spacing
         i++
         continue
       }
