@@ -23,8 +23,14 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
 
     let resume = ''
 
-    // Name
-    resume += `${dataToUse.profile?.name || 'Your Name'}\n\n`
+    // Name - combine first, middle, and last name
+    const firstName = dataToUse.profile?.first_name || ''
+    const middleName = dataToUse.profile?.middle_name || ''
+    const lastName = dataToUse.profile?.last_name || ''
+    const fullName = [firstName, middleName, lastName].filter(n => n && n.trim()).join(' ') || 
+                      dataToUse.profile?.name || // Fallback to old 'name' field
+                      'Your Name'
+    resume += `${fullName.toUpperCase()}\n\n`
 
     // Contact
     const contactParts: string[] = []

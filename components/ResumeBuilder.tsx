@@ -36,14 +36,36 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
 
   useEffect(() => {
     if (profileData) {
+      // Handle both old 'name' field and new separate name fields
+      const profile = profileData.profile
+      let firstName = profile.first_name || ''
+      let lastName = profile.last_name || ''
+      let middleName = profile.middle_name || ''
+      
+      // If new fields don't exist, try to split the old 'name' field
+      if (!firstName && !lastName && profile.name) {
+        const nameParts = profile.name.trim().split(/\s+/)
+        if (nameParts.length >= 2) {
+          firstName = nameParts[0]
+          lastName = nameParts.slice(-1)[0]
+          if (nameParts.length > 2) {
+            middleName = nameParts.slice(1, -1).join(' ')
+          }
+        } else if (nameParts.length === 1) {
+          firstName = nameParts[0]
+        }
+      }
+      
       setFormData({
-        name: profileData.profile.name || '',
-        email: profileData.profile.email || '',
-        phone: profileData.profile.phone || '',
-        linkedin: profileData.profile.linkedin || '',
-        github: profileData.profile.github || '',
-        portfolio: profileData.profile.portfolio || '',
-        professional_summary: profileData.profile.professional_summary || ''
+        first_name: firstName,
+        last_name: lastName,
+        middle_name: middleName,
+        email: profile.email || '',
+        phone: profile.phone || '',
+        linkedin: profile.linkedin || '',
+        github: profile.github || '',
+        portfolio: profile.portfolio || '',
+        professional_summary: profile.professional_summary || ''
       })
       setExperiences(profileData.experiences || [])
       setEducation(profileData.education || [])
@@ -81,7 +103,9 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
         await supabase
           .from('user_profiles')
           .update({
-            name: formData.name,
+            first_name: formData.first_name,
+            last_name: formData.last_name,
+            middle_name: formData.middle_name,
             email: formData.email,
             phone: formData.phone,
             linkedin: formData.linkedin,
@@ -95,7 +119,15 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
           .from('user_profiles')
           .insert({
             user_id: user.id,
-            ...formData
+            first_name: formData.first_name,
+            last_name: formData.last_name,
+            middle_name: formData.middle_name,
+            email: formData.email,
+            phone: formData.phone,
+            linkedin: formData.linkedin,
+            github: formData.github,
+            portfolio: formData.portfolio,
+            professional_summary: formData.professional_summary
           })
           .select()
           .single()
@@ -291,13 +323,33 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">Full Name *</label>
+                <label className="block text-sm font-medium text-gray-700">First Name *</label>
                 <input
                   type="text"
-                  value={formData.name}
-                  onChange={(e) => updateFormData('name', e.target.value)}
+                  value={formData.first_name}
+                  onChange={(e) => updateFormData('first_name', e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  placeholder="John Doe"
+                  placeholder="John"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">Middle Name</label>
+                <input
+                  type="text"
+                  value={formData.middle_name}
+                  onChange={(e) => updateFormData('middle_name', e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  placeholder="Michael (optional)"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">Last Name *</label>
+                <input
+                  type="text"
+                  value={formData.last_name}
+                  onChange={(e) => updateFormData('last_name', e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  placeholder="Doe"
                 />
               </div>
               <div className="space-y-1">

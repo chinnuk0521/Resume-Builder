@@ -85,8 +85,16 @@ export default function DashboardPage() {
     setIsOptimizing(true)
     try {
       // Build structured resume data from profile
+      // Combine first, middle, and last name
+      const firstName = profileData.profile.first_name || ''
+      const middleName = profileData.profile.middle_name || ''
+      const lastName = profileData.profile.last_name || ''
+      const fullName = [firstName, middleName, lastName].filter(n => n && n.trim()).join(' ') || 
+                      profileData.profile.name || // Fallback to old 'name' field
+                      'Your Name'
+      
       const resumeData = {
-        name: profileData.profile.name,
+        name: fullName,
         contact: {
           email: profileData.profile.email,
           phone: profileData.profile.phone || '',
