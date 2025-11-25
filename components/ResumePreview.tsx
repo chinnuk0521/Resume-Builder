@@ -105,6 +105,8 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
         if (proj.title) {
           resume += `${proj.title}\n\n`
           if (proj.description) resume += `• ${proj.description}\n\n`
+          if (proj.contribution) resume += `• ${proj.contribution}\n\n`
+          if (proj.tech_stack) resume += `• Technologies: ${proj.tech_stack}\n\n`
         }
       })
     }
