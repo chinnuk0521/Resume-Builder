@@ -42,6 +42,8 @@ npm run dev
 
 4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
+**Production URL:** [https://resumebuilder.chandukalluru.com/](https://resumebuilder.chandukalluru.com/)
+
 ## Usage
 
 1. Upload your resume PDF (max 5MB)
