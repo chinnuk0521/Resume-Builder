@@ -676,28 +676,52 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                       Remove
                     </button>
                   </div>
-                  <input
-                    type="text"
-                    value={proj.title || ''}
-                    onChange={(e) => {
-                      const newProj = [...projects]
-                      newProj[idx] = { ...newProj[idx], title: e.target.value }
-                      setProjects(newProj)
-                    }}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg mb-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Project Title"
-                  />
-                  <textarea
-                    value={proj.description || ''}
-                    onChange={(e) => {
-                      const newProj = [...projects]
-                      newProj[idx] = { ...newProj[idx], description: e.target.value }
-                      setProjects(newProj)
-                    }}
-                    rows={3}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                    placeholder="Project description and key features..."
-                  />
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      value={proj.title || ''}
+                      onChange={(e) => {
+                        const newProj = [...projects]
+                        newProj[idx] = { ...newProj[idx], title: e.target.value }
+                        setProjects(newProj)
+                      }}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Project Title *"
+                    />
+                    <textarea
+                      value={proj.description || ''}
+                      onChange={(e) => {
+                        const newProj = [...projects]
+                        newProj[idx] = { ...newProj[idx], description: e.target.value }
+                        setProjects(newProj)
+                      }}
+                      rows={3}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      placeholder="Project description and key features..."
+                    />
+                    <textarea
+                      value={proj.contribution || ''}
+                      onChange={(e) => {
+                        const newProj = [...projects]
+                        newProj[idx] = { ...newProj[idx], contribution: e.target.value }
+                        setProjects(newProj)
+                      }}
+                      rows={2}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      placeholder="Your key contributions (optional)"
+                    />
+                    <input
+                      type="text"
+                      value={proj.tech_stack || ''}
+                      onChange={(e) => {
+                        const newProj = [...projects]
+                        newProj[idx] = { ...newProj[idx], tech_stack: e.target.value }
+                        setProjects(newProj)
+                      }}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Technologies used (e.g., React, Node.js, MongoDB)"
+                    />
+                  </div>
                 </div>
               ))}
               <button
