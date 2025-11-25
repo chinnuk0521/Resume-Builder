@@ -8,6 +8,11 @@ interface ResumePreviewProps {
   liveData?: any // For real-time preview updates
 }
 
+// A4 dimensions for preview (maintaining aspect ratio)
+// A4: 210mm x 297mm = 595.3 x 841.9 points
+// For preview, we'll use a scaled version that fits the screen
+const A4_ASPECT_RATIO = 297 / 210 // Height / Width = 1.414
+
 export default function ResumePreview({ profileData, optimizedResume, liveData }: ResumePreviewProps) {
   // Use liveData if available, otherwise fall back to profileData
   const dataToUse = liveData || profileData
@@ -170,7 +175,7 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
         <div className="flex justify-between items-center">
           <div>
             <h2 className="text-xl font-bold text-white">Resume Preview</h2>
-            <p className="text-gray-300 text-sm mt-0.5">Live preview as you type</p>
+            <p className="text-gray-300 text-sm mt-0.5">A4 Format - Live preview as you type</p>
           </div>
           {resumeText && !resumeText.includes('Start building') && (
             <button
@@ -182,9 +187,27 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
           )}
         </div>
       </div>
-      <div className="border-t border-gray-200 bg-gray-50 p-6 min-h-[600px] max-h-[calc(100vh-200px)] overflow-y-auto">
-        <div className="bg-white rounded-lg p-8 shadow-inner border border-gray-200">
-          <pre className="whitespace-pre-wrap font-mono text-sm text-gray-800 leading-relaxed">
+      <div className="border-t border-gray-200 bg-gray-50 p-6 overflow-y-auto">
+        {/* A4-sized preview container */}
+        <div className="mx-auto bg-white shadow-lg" style={{
+          width: '100%',
+          maxWidth: '595px', // A4 width in pixels (scaled for screen)
+          minHeight: '842px', // A4 height in pixels (scaled for screen)
+          aspectRatio: `${210 / 297}`, // A4 aspect ratio
+          padding: '72px', // 1 inch margins (25mm)
+          boxSizing: 'border-box',
+          fontSize: '10px',
+          lineHeight: '12px',
+          fontFamily: 'monospace'
+        }}>
+          <pre className="whitespace-pre-wrap text-gray-800 leading-relaxed m-0 p-0" style={{
+            fontSize: '10px',
+            lineHeight: '12px',
+            fontFamily: 'monospace',
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word',
+            maxWidth: '100%'
+          }}>
             {resumeText}
           </pre>
         </div>
