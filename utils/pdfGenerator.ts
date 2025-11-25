@@ -76,8 +76,8 @@ export async function generatePDF(textContent: string) {
 
     // Track context for right-alignment
     let currentSection = ''
-    let previousLineWasCompany = false
-    let previousLineWasUniversity = false
+    let waitingForDateAfterCompany = false
+    let waitingForDateAfterUniversity = false
 
     let i = 0
     while (i < lines.length) {
@@ -236,8 +236,8 @@ export async function generatePDF(textContent: string) {
       ]
       if (line === line.toUpperCase() && sectionHeaders.includes(line)) {
         currentSection = line
-        previousLineWasCompany = false
-        previousLineWasUniversity = false
+        waitingForDateAfterCompany = false
+        waitingForDateAfterUniversity = false
         yPosition -= sectionSpacing
         currentPage.drawText(line, {
           x: MARGIN,
@@ -252,17 +252,18 @@ export async function generatePDF(textContent: string) {
       }
 
       // Check if it's a company name (in WORK EXPERIENCE section)
+      // Company name is the first non-empty line after WORK EXPERIENCE header
       if ((currentSection === 'WORK EXPERIENCE' || currentSection === 'EXPERIENCE') && 
           !line.includes('—') && !line.includes('–') && 
           !line.startsWith('•') && 
           !line.match(/\w+\s+\d{4}\s*[-–—]/) &&
           !line.match(/\d{4}\s*[-–—]/) &&
-          previousLineWasCompany === false &&
-          i > 0 && lines[i-1] !== '' &&
-          !sectionHeaders.includes(lines[i-1])) {
+          !waitingForDateAfterCompany &&
+          i > 0 && 
+          (lines[i-1] === '' || sectionHeaders.includes(lines[i-1]))) {
         // This is likely a company name
-        previousLineWasCompany = true
-        previousLineWasUniversity = false
+        waitingForDateAfterCompany = true
+        waitingForDateAfterUniversity = false
         currentPage.drawText(line, {
           x: MARGIN,
           y: yPosition,
@@ -276,17 +277,18 @@ export async function generatePDF(textContent: string) {
       }
 
       // Check if it's a university name (in EDUCATION section)
+      // University name is the first non-empty line after EDUCATION header
       if (currentSection === 'EDUCATION' && 
           !line.includes('—') && !line.includes('–') && 
           !line.startsWith('•') && 
           !line.match(/\w+\s+\d{4}\s*[-–—]/) &&
           !line.match(/\d{4}\s*[-–—]/) &&
-          previousLineWasUniversity === false &&
-          i > 0 && lines[i-1] !== '' &&
-          !sectionHeaders.includes(lines[i-1])) {
+          !waitingForDateAfterUniversity &&
+          i > 0 && 
+          (lines[i-1] === '' || sectionHeaders.includes(lines[i-1]))) {
         // This is likely a university name
-        previousLineWasUniversity = true
-        previousLineWasCompany = false
+        waitingForDateAfterUniversity = true
+        waitingForDateAfterCompany = false
         currentPage.drawText(line, {
           x: MARGIN,
           y: yPosition,
@@ -299,13 +301,14 @@ export async function generatePDF(textContent: string) {
         continue
       }
 
-      // Check if it's a company name with em dash (old format)
+      // Check if it's a company name with em dash (old format) - skip this, use new format
+      // Job title or degree - regular text, don't reset the waiting flag
       if (line.includes('—') || line.includes('–')) {
         const parts = line.split(/[—–]/).map(p => p.trim())
         if (parts.length >= 2) {
           // Company name in bold
-          previousLineWasCompany = true
-          previousLineWasUniversity = false
+          waitingForDateAfterCompany = true
+          waitingForDateAfterUniversity = false
           currentPage.drawText(parts[0], {
             x: MARGIN,
             y: yPosition,
@@ -315,14 +318,14 @@ export async function generatePDF(textContent: string) {
           })
           yPosition -= lineHeight + 2
           
-          // Job title on next line
+          // Job title on next line - keep waiting flag
           if (parts[1]) {
             if (yPosition < MARGIN + minBottomMargin) {
               const newPage = pdfDoc.addPage([A4_WIDTH, A4_HEIGHT])
               currentPage = newPage
               yPosition = A4_HEIGHT - MARGIN
             }
-            previousLineWasCompany = false
+            // Don't reset waitingForDateAfterCompany - dates should still be right-aligned
             currentPage.drawText(parts[1], {
               x: MARGIN,
               y: yPosition,
@@ -346,14 +349,33 @@ export async function generatePDF(textContent: string) {
         i++
         continue
       }
+      
+      // Job title or degree - regular text after company/university, don't reset waiting flags
+      if ((waitingForDateAfterCompany || waitingForDateAfterUniversity) &&
+          !line.startsWith('•') &&
+          !line.match(/\w+\s+\d{4}\s*[-–—]/) &&
+          !line.match(/\d{4}\s*[-–—]/) &&
+          !line.includes('|')) {
+        // This is likely a job title or degree - draw it normally, keep waiting for date
+        currentPage.drawText(line, {
+          x: MARGIN,
+          y: yPosition,
+          size: fontSize,
+          font: font,
+          color: rgb(0, 0, 0),
+        })
+        yPosition -= lineHeight + 2
+        i++
+        continue
+      }
 
       // Check if it's a date range (format: "Jan 2025 - Sept 2025" or "Aug 2019 - May 2023")
       // Or location/years (format: "2019 - 2023 | Location" or "Location | 2019 - 2023")
       if (line.match(/\w+\s+\d{4}\s*[-–—]\s*(\w+\s+\d{4}|present|current)/i) || 
           line.match(/\d{4}\s*[-–—]\s*(\d{4}|present|current)/i) ||
           (line.includes('|') && (line.match(/\d{4}/) || line.match(/present|current/i)))) {
-        // Right-align if it follows a company or university name
-        if (previousLineWasCompany || previousLineWasUniversity) {
+        // Right-align if we're waiting for a date after company or university
+        if (waitingForDateAfterCompany || waitingForDateAfterUniversity) {
           const textWidth = font.widthOfTextAtSize(line, fontSize)
           const rightX = A4_WIDTH - MARGIN - textWidth
           currentPage.drawText(line, {
@@ -363,8 +385,9 @@ export async function generatePDF(textContent: string) {
             font: font,
             color: rgb(0, 0, 0),
           })
-          previousLineWasCompany = false
-          previousLineWasUniversity = false
+          // Reset flags after drawing the date
+          waitingForDateAfterCompany = false
+          waitingForDateAfterUniversity = false
         } else {
           // Left-align for other cases
           currentPage.drawText(line, {

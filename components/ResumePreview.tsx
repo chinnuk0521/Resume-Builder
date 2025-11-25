@@ -338,14 +338,41 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
               // (follows a company or university name)
               const isDateLocation = (line.match(/\w+\s+\d{4}\s*[-–—]/) || 
                                      line.match(/\d{4}\s*[-–—]/) ||
-                                     (line.includes('|') && line.match(/\d{4}/)))
-              const prevLine = idx > 0 ? resumeText.split('\n')[idx - 1] : ''
-              const isAfterCompany = prevLine && 
-                                    !prevLine.includes('—') && 
-                                    !prevLine.includes('•') &&
-                                    !prevLine.match(/^(PROFESSIONAL SUMMARY|WORK EXPERIENCE|EXPERIENCE|EDUCATION|TECHNICAL SKILLS|SKILLS|ACHIEVEMENTS|PROJECTS|CERTIFICATIONS|LINKS)$/)
+                                     (line.includes('|') && (line.match(/\d{4}/) || line.match(/present|current/i))))
               
-              if (isDateLocation && isAfterCompany) {
+              // Check if previous lines indicate we're in an experience/education entry
+              const linesArray = resumeText.split('\n')
+              let foundCompanyOrUniversity = false
+              let foundJobTitleOrDegree = false
+              
+              // Look backwards to find company/university and job title/degree
+              for (let j = idx - 1; j >= 0 && j >= idx - 5; j--) {
+                const prevLine = linesArray[j]?.trim() || ''
+                if (!prevLine) continue
+                
+                // Check if it's a section header
+                if (prevLine.match(/^(WORK EXPERIENCE|EXPERIENCE|EDUCATION)$/)) {
+                  break
+                }
+                
+                // Check if it's a company/university (bold, not a date, not a bullet)
+                if (!prevLine.includes('—') && 
+                    !prevLine.includes('•') && 
+                    !prevLine.match(/\d{4}\s*[-–—]/) &&
+                    !prevLine.match(/\w+\s+\d{4}\s*[-–—]/) &&
+                    !prevLine.includes('|')) {
+                  if (!foundJobTitleOrDegree) {
+                    foundCompanyOrUniversity = true
+                  }
+                } else if (foundCompanyOrUniversity && 
+                          !prevLine.startsWith('•') &&
+                          !prevLine.match(/\d{4}\s*[-–—]/) &&
+                          !prevLine.match(/\w+\s+\d{4}\s*[-–—]/)) {
+                  foundJobTitleOrDegree = true
+                }
+              }
+              
+              if (isDateLocation && foundCompanyOrUniversity) {
                 return (
                   <div key={idx} className="whitespace-pre-wrap text-right">
                     {line || '\u00A0'}
