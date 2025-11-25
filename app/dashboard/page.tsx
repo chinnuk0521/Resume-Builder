@@ -20,6 +20,7 @@ export default function DashboardPage() {
   const [optimizedResume, setOptimizedResume] = useState('')
   const [isOptimizing, setIsOptimizing] = useState(false)
   const [activeTab, setActiveTab] = useState<'build' | 'optimize'>('build')
+  const [liveFormData, setLiveFormData] = useState<any>(null) // For real-time preview
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -171,20 +172,30 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
+      <header className="bg-white border-b border-gray-200 shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-blue-600">Resume Optimizer</h1>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-lg">RO</span>
+              </div>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
+                Resume Optimizer
+              </h1>
+            </div>
             <div className="flex items-center gap-4">
-              <span className="text-gray-600">{user.email}</span>
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-gray-700">{user.email}</span>
+              </div>
               <button
                 onClick={async () => {
                   await supabase.auth.signOut()
                   router.push('/')
                 }}
-                className="text-gray-600 hover:text-gray-900"
+                className="px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors font-medium"
               >
                 Sign Out
               </button>
@@ -194,28 +205,34 @@ export default function DashboardPage() {
       </header>
 
       {/* Tabs */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="container mx-auto px-4">
-          <div className="flex gap-4">
+          <div className="flex gap-2">
             <button
               onClick={() => setActiveTab('build')}
-              className={`px-6 py-4 font-semibold border-b-2 transition ${
+              className={`px-6 py-4 font-semibold border-b-2 transition-all relative ${
                 activeTab === 'build'
                   ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
+                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
               }`}
             >
-              Build Resume
+              <span className="flex items-center gap-2">
+                <span>📝</span>
+                <span>Build Resume</span>
+              </span>
             </button>
             <button
               onClick={() => setActiveTab('optimize')}
-              className={`px-6 py-4 font-semibold border-b-2 transition ${
+              className={`px-6 py-4 font-semibold border-b-2 transition-all relative ${
                 activeTab === 'optimize'
                   ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
+                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
               }`}
             >
-              Optimize for JD
+              <span className="flex items-center gap-2">
+                <span>✨</span>
+                <span>Optimize for JD</span>
+              </span>
             </button>
           </div>
         </div>
@@ -225,14 +242,18 @@ export default function DashboardPage() {
       <div className="container mx-auto px-4 py-8">
         {activeTab === 'build' ? (
           <div className="grid lg:grid-cols-2 gap-8">
-            <div>
+            <div className="lg:max-h-[calc(100vh-180px)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
               <ResumeBuilder
                 profileData={profileData}
                 onSave={loadProfile}
+                onDataChange={setLiveFormData}
               />
             </div>
-            <div className="sticky top-4 h-fit">
-              <ResumePreview profileData={profileData} />
+            <div className="sticky top-4 h-fit lg:max-h-[calc(100vh-100px)]">
+              <ResumePreview 
+                profileData={profileData} 
+                liveData={liveFormData}
+              />
             </div>
           </div>
         ) : (

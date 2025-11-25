@@ -5,44 +5,48 @@ import { generatePDF } from '@/utils/pdfGenerator'
 interface ResumePreviewProps {
   profileData?: any
   optimizedResume?: string
+  liveData?: any // For real-time preview updates
 }
 
-export default function ResumePreview({ profileData, optimizedResume }: ResumePreviewProps) {
+export default function ResumePreview({ profileData, optimizedResume, liveData }: ResumePreviewProps) {
+  // Use liveData if available, otherwise fall back to profileData
+  const dataToUse = liveData || profileData
+
   const formatResume = () => {
     if (optimizedResume) {
       return optimizedResume
     }
 
-    if (!profileData) {
+    if (!dataToUse) {
       return 'Start building your resume to see the preview here...'
     }
 
     let resume = ''
 
     // Name
-    resume += `${profileData.profile.name || 'Your Name'}\n\n`
+    resume += `${dataToUse.profile?.name || 'Your Name'}\n\n`
 
     // Contact
     const contactParts: string[] = []
-    if (profileData.profile.email) contactParts.push(profileData.profile.email)
-    if (profileData.profile.phone) contactParts.push(profileData.profile.phone)
-    if (profileData.profile.linkedin) contactParts.push(profileData.profile.linkedin)
-    if (profileData.profile.portfolio) contactParts.push(profileData.profile.portfolio)
-    if (profileData.profile.github) contactParts.push(profileData.profile.github)
+    if (dataToUse.profile?.email) contactParts.push(dataToUse.profile.email)
+    if (dataToUse.profile?.phone) contactParts.push(dataToUse.profile.phone)
+    if (dataToUse.profile?.linkedin) contactParts.push(dataToUse.profile.linkedin)
+    if (dataToUse.profile?.portfolio) contactParts.push(dataToUse.profile.portfolio)
+    if (dataToUse.profile?.github) contactParts.push(dataToUse.profile.github)
 
     if (contactParts.length > 0) {
       resume += `${contactParts.join(' | ')}\n\n`
     }
 
     // Professional Summary
-    if (profileData.profile.professional_summary) {
-      resume += `PROFESSIONAL SUMMARY\n\n${profileData.profile.professional_summary}\n\n`
+    if (dataToUse.profile?.professional_summary) {
+      resume += `PROFESSIONAL SUMMARY\n\n${dataToUse.profile.professional_summary}\n\n`
     }
 
     // Experience
-    if (profileData.experiences && profileData.experiences.length > 0) {
+    if (dataToUse.experiences && dataToUse.experiences.length > 0) {
       resume += `EXPERIENCE\n\n`
-      profileData.experiences.forEach((exp: any) => {
+      dataToUse.experiences.forEach((exp: any) => {
         resume += `${exp.job_title || 'Job Title'} — ${exp.company || 'Company'}\n\n`
         if (exp.start_date || exp.end_date) {
           resume += `${exp.start_date || 'Start Date'} – ${exp.end_date || 'Present'}\n\n`
@@ -58,9 +62,9 @@ export default function ResumePreview({ profileData, optimizedResume }: ResumePr
     }
 
     // Education
-    if (profileData.education && profileData.education.length > 0) {
+    if (dataToUse.education && dataToUse.education.length > 0) {
       resume += `EDUCATION\n\n`
-      profileData.education.forEach((edu: any) => {
+      dataToUse.education.forEach((edu: any) => {
         resume += `${edu.degree || 'Degree'} — ${edu.university || 'University'}\n\n`
         const details: string[] = []
         if (edu.years) details.push(edu.years)
@@ -72,10 +76,10 @@ export default function ResumePreview({ profileData, optimizedResume }: ResumePr
     }
 
     // Skills
-    if (profileData.skills && profileData.skills.length > 0) {
+    if (dataToUse.skills && dataToUse.skills.length > 0) {
       resume += `SKILLS\n\n`
       const skillsByCategory: { [key: string]: string[] } = {}
-      profileData.skills.forEach((skill: any) => {
+      dataToUse.skills.forEach((skill: any) => {
         const cat = skill.category || 'others'
         if (!skillsByCategory[cat]) skillsByCategory[cat] = []
         skillsByCategory[cat].push(skill.skill_name)
@@ -89,9 +93,9 @@ export default function ResumePreview({ profileData, optimizedResume }: ResumePr
     }
 
     // Projects
-    if (profileData.projects && profileData.projects.length > 0) {
+    if (dataToUse.projects && dataToUse.projects.length > 0) {
       resume += `PROJECTS\n\n`
-      profileData.projects.forEach((proj: any) => {
+      dataToUse.projects.forEach((proj: any) => {
         if (proj.title) {
           resume += `${proj.title}\n\n`
           if (proj.description) resume += `• ${proj.description}\n\n`
@@ -100,9 +104,9 @@ export default function ResumePreview({ profileData, optimizedResume }: ResumePr
     }
 
     // Achievements
-    if (profileData.achievements && profileData.achievements.length > 0) {
+    if (dataToUse.achievements && dataToUse.achievements.length > 0) {
       resume += `ACHIEVEMENTS\n\n`
-      profileData.achievements.forEach((ach: any) => {
+      dataToUse.achievements.forEach((ach: any) => {
         const text = ach.achievement_text || ach
         if (text) {
           resume += `• ${text}\n\n`
@@ -111,9 +115,9 @@ export default function ResumePreview({ profileData, optimizedResume }: ResumePr
     }
 
     // Certifications
-    if (profileData.certifications && profileData.certifications.length > 0) {
+    if (dataToUse.certifications && dataToUse.certifications.length > 0) {
       resume += `CERTIFICATIONS\n\n`
-      profileData.certifications.forEach((cert: any) => {
+      dataToUse.certifications.forEach((cert: any) => {
         const name = cert.certification_name || cert
         if (name) {
           resume += `• ${name}\n\n`
@@ -123,14 +127,14 @@ export default function ResumePreview({ profileData, optimizedResume }: ResumePr
 
     // Links
     resume += `LINKS\n\n`
-    if (profileData.profile.linkedin) {
-      resume += `LinkedIn: ${profileData.profile.linkedin}\n\n`
+    if (dataToUse.profile?.linkedin) {
+      resume += `LinkedIn: ${dataToUse.profile.linkedin}\n\n`
     }
-    if (profileData.profile.portfolio) {
-      resume += `Portfolio: ${profileData.profile.portfolio}\n\n`
+    if (dataToUse.profile?.portfolio) {
+      resume += `Portfolio: ${dataToUse.profile.portfolio}\n\n`
     }
-    if (profileData.profile.github) {
-      resume += `GitHub: ${profileData.profile.github}\n\n`
+    if (dataToUse.profile?.github) {
+      resume += `GitHub: ${dataToUse.profile.github}\n\n`
     }
 
     return resume.trim() || 'Start building your resume to see the preview here...'
@@ -153,24 +157,30 @@ export default function ResumePreview({ profileData, optimizedResume }: ResumePr
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold text-gray-700">Resume Preview</h2>
-        {resumeText && !resumeText.includes('Start building') && (
-          <button
-            onClick={handleDownload}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-semibold"
-          >
-            Download PDF
-          </button>
-        )}
+    <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+      <div className="bg-gradient-to-r from-gray-700 to-gray-800 px-6 py-4">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-xl font-bold text-white">Resume Preview</h2>
+            <p className="text-gray-300 text-sm mt-0.5">Live preview as you type</p>
+          </div>
+          {resumeText && !resumeText.includes('Start building') && (
+            <button
+              onClick={handleDownload}
+              className="px-4 py-2 bg-white text-gray-800 rounded-lg hover:bg-gray-100 text-sm font-semibold transition-all shadow-md hover:shadow-lg"
+            >
+              📥 Download PDF
+            </button>
+          )}
+        </div>
       </div>
-      <div className="border border-gray-200 rounded-lg p-6 bg-gray-50 min-h-[600px]">
-        <pre className="whitespace-pre-wrap font-mono text-sm text-gray-800 leading-relaxed">
-          {resumeText}
-        </pre>
+      <div className="border-t border-gray-200 bg-gray-50 p-6 min-h-[600px] max-h-[calc(100vh-200px)] overflow-y-auto">
+        <div className="bg-white rounded-lg p-8 shadow-inner border border-gray-200">
+          <pre className="whitespace-pre-wrap font-mono text-sm text-gray-800 leading-relaxed">
+            {resumeText}
+          </pre>
+        </div>
       </div>
     </div>
   )
 }
-
