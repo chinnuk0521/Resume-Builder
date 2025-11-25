@@ -7,6 +7,7 @@ import ResumeBuilder from '@/components/ResumeBuilder'
 import ResumePreview from '@/components/ResumePreview'
 import JobDescription from '@/components/JobDescription'
 import { supabase } from '@/lib/supabase'
+import { HiOutlineDocumentText, HiOutlineSparkles } from 'react-icons/hi2'
 
 // Disable static generation for this page
 export const dynamic = 'force-dynamic'
@@ -225,7 +226,7 @@ export default function DashboardPage() {
               }`}
             >
               <span className="flex items-center gap-2">
-                <span>📝</span>
+                <HiOutlineDocumentText className="w-5 h-5" />
                 <span>Build Resume</span>
               </span>
             </button>
@@ -238,7 +239,7 @@ export default function DashboardPage() {
               }`}
             >
               <span className="flex items-center gap-2">
-                <span>✨</span>
+                <HiOutlineSparkles className="w-5 h-5" />
                 <span>Optimize for JD</span>
               </span>
             </button>

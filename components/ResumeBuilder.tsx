@@ -3,6 +3,18 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/components/AuthProvider'
+import { 
+  HiOutlineUser, 
+  HiOutlineDocumentText, 
+  HiOutlineBriefcase, 
+  HiOutlineAcademicCap,
+  HiOutlineWrenchScrewdriver,
+  HiOutlineRocketLaunch,
+  HiOutlineTrophy,
+  HiOutlineDocumentCheck,
+  HiCheckCircle,
+  HiXCircle
+} from 'react-icons/hi2'
 
 interface ResumeBuilderProps {
   profileData: any
@@ -239,11 +251,11 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
       }
 
       onSave()
-      setSaveMessage('✓ Resume saved successfully!')
+      setSaveMessage('success')
       setTimeout(() => setSaveMessage(''), 3000)
     } catch (error: any) {
       console.error('Error saving resume:', error)
-      setSaveMessage('✗ Failed to save: ' + error.message)
+      setSaveMessage('error:' + error.message)
       setTimeout(() => setSaveMessage(''), 5000)
     } finally {
       setSaving(false)
@@ -251,14 +263,14 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
   }
 
   const sections = [
-    { id: 'personal', label: 'Personal Info', icon: '👤' },
-    { id: 'summary', label: 'Summary', icon: '📝' },
-    { id: 'experience', label: 'Experience', icon: '💼' },
-    { id: 'education', label: 'Education', icon: '🎓' },
-    { id: 'skills', label: 'Skills', icon: '🛠️' },
-    { id: 'projects', label: 'Projects', icon: '🚀' },
-    { id: 'achievements', label: 'Achievements', icon: '🏆' },
-    { id: 'certifications', label: 'Certifications', icon: '📜' }
+    { id: 'personal', label: 'Personal Info', icon: HiOutlineUser },
+    { id: 'summary', label: 'Summary', icon: HiOutlineDocumentText },
+    { id: 'experience', label: 'Experience', icon: HiOutlineBriefcase },
+    { id: 'education', label: 'Education', icon: HiOutlineAcademicCap },
+    { id: 'skills', label: 'Skills', icon: HiOutlineWrenchScrewdriver },
+    { id: 'projects', label: 'Projects', icon: HiOutlineRocketLaunch },
+    { id: 'achievements', label: 'Achievements', icon: HiOutlineTrophy },
+    { id: 'certifications', label: 'Certifications', icon: HiOutlineDocumentCheck }
   ]
 
   const updateFormData = (field: string, value: string) => {
@@ -276,16 +288,38 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
           </div>
           <div className="flex items-center gap-3">
             {saveMessage && (
-              <span className={`text-sm font-medium ${saveMessage.includes('✓') ? 'text-green-200' : 'text-red-200'}`}>
-                {saveMessage}
+              <span className={`flex items-center gap-2 text-sm font-medium ${
+                saveMessage === 'success' ? 'text-green-200' : 'text-red-200'
+              }`}>
+                {saveMessage === 'success' ? (
+                  <>
+                    <HiCheckCircle className="w-5 h-5" />
+                    <span>Resume saved successfully!</span>
+                  </>
+                ) : saveMessage.startsWith('error:') ? (
+                  <>
+                    <HiXCircle className="w-5 h-5" />
+                    <span>Failed to save: {saveMessage.replace('error:', '')}</span>
+                  </>
+                ) : null}
               </span>
             )}
             <button
               onClick={handleSave}
               disabled={saving}
-              className="px-5 py-2.5 bg-white text-blue-600 rounded-lg hover:bg-blue-50 disabled:opacity-50 font-semibold transition-all shadow-md hover:shadow-lg"
+              className="flex items-center gap-2 px-5 py-2.5 bg-white text-blue-600 rounded-lg hover:bg-blue-50 disabled:opacity-50 font-semibold transition-all shadow-md hover:shadow-lg"
             >
-              {saving ? 'Saving...' : '💾 Save Resume'}
+              {saving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <HiOutlineDocumentCheck className="w-5 h-5" />
+                  <span>Save Resume</span>
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -304,7 +338,7 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                   : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
               }`}
             >
-              <span>{section.icon}</span>
+              <section.icon className="w-4 h-4" />
               <span>{section.label}</span>
             </button>
           ))}

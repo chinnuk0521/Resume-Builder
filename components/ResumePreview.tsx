@@ -1,6 +1,7 @@
 'use client'
 
 import { generatePDF } from '@/utils/pdfGenerator'
+import { HiOutlineArrowDownTray } from 'react-icons/hi2'
 
 interface ResumePreviewProps {
   profileData?: any
@@ -180,9 +181,10 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
           {resumeText && !resumeText.includes('Start building') && (
             <button
               onClick={handleDownload}
-              className="px-4 py-2 bg-white text-gray-800 rounded-lg hover:bg-gray-100 text-sm font-semibold transition-all shadow-md hover:shadow-lg"
+              className="flex items-center gap-2 px-4 py-2 bg-white text-gray-800 rounded-lg hover:bg-gray-100 text-sm font-semibold transition-all shadow-md hover:shadow-lg"
             >
-              📥 Download PDF
+              <HiOutlineArrowDownTray className="w-5 h-5" />
+              <span>Download PDF</span>
             </button>
           )}
         </div>
