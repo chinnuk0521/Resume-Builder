@@ -258,6 +258,7 @@ export async function generatePDF(textContent: string) {
           !line.startsWith('•') && 
           !line.match(/\w+\s+\d{4}\s*[-–—]/) &&
           !line.match(/\d{4}\s*[-–—]/) &&
+          !line.includes('||DATE:') &&
           !waitingForDateAfterCompany &&
           i > 0 && 
           (lines[i-1] === '' || sectionHeaders.includes(lines[i-1]))) {
@@ -265,14 +266,33 @@ export async function generatePDF(textContent: string) {
         waitingForDateAfterCompany = true
         waitingForDateAfterUniversity = false
         
-        // Check if next line is a date - if so, draw both on same line
-        const nextLine = i + 1 < lines.length ? lines[i + 1].trim() : ''
-        const isNextLineDate = nextLine && (
-          nextLine.match(/\w+\s+\d{4}\s*[-–—]\s*(\w+\s+\d{4}|present|current)/i) ||
-          nextLine.match(/\d{4}\s*[-–—]\s*(\d{4}|present|current)/i)
-        )
+        // Look ahead for dates - check next few lines
+        let foundDate = false
+        let dateLine = ''
+        let dateIdx = i + 1
         
-        if (isNextLineDate) {
+        // Skip empty lines and job title to find date
+        while (dateIdx < lines.length && dateIdx < i + 5) {
+          const testLine = lines[dateIdx].trim()
+          if (!testLine) {
+            dateIdx++
+            continue
+          }
+          // Check if it's a date
+          if (testLine.match(/\w+\s+\d{4}\s*[-–—]\s*(\w+\s+\d{4}|present|current)/i) ||
+              testLine.match(/\d{4}\s*[-–—]\s*(\d{4}|present|current)/i)) {
+            foundDate = true
+            dateLine = testLine
+            break
+          }
+          // If we hit a bullet or section, stop looking
+          if (testLine.startsWith('•') || sectionHeaders.includes(testLine)) {
+            break
+          }
+          dateIdx++
+        }
+        
+        if (foundDate) {
           // Draw company name on left
           currentPage.drawText(line, {
             x: MARGIN,
@@ -283,9 +303,9 @@ export async function generatePDF(textContent: string) {
           })
           
           // Draw date on right, same line
-          const dateWidth = font.widthOfTextAtSize(nextLine, fontSize)
+          const dateWidth = font.widthOfTextAtSize(dateLine, fontSize)
           const dateX = A4_WIDTH - MARGIN - dateWidth
-          currentPage.drawText(nextLine, {
+          currentPage.drawText(dateLine, {
             x: dateX,
             y: yPosition,
             size: fontSize,
@@ -293,11 +313,11 @@ export async function generatePDF(textContent: string) {
             color: rgb(0, 0, 0),
           })
           
-          // Skip the date line since we already drew it
-          i += 2
+          // Skip to after the date line
+          i = dateIdx + 1
           waitingForDateAfterCompany = false
         } else {
-          // Just draw company name, wait for date on next iteration
+          // Just draw company name
           currentPage.drawText(line, {
             x: MARGIN,
             y: yPosition,
@@ -318,6 +338,7 @@ export async function generatePDF(textContent: string) {
           !line.startsWith('•') && 
           !line.match(/\w+\s+\d{4}\s*[-–—]/) &&
           !line.match(/\d{4}\s*[-–—]/) &&
+          !line.includes('||DATE:') &&
           !waitingForDateAfterUniversity &&
           i > 0 && 
           (lines[i-1] === '' || sectionHeaders.includes(lines[i-1]))) {
@@ -325,18 +346,33 @@ export async function generatePDF(textContent: string) {
         waitingForDateAfterUniversity = true
         waitingForDateAfterCompany = false
         
-        // Check if next non-empty line after degree is date/location
-        let nextNonEmptyIdx = i + 1
-        while (nextNonEmptyIdx < lines.length && !lines[nextNonEmptyIdx].trim()) {
-          nextNonEmptyIdx++
-        }
-        const nextNonEmptyLine = nextNonEmptyIdx < lines.length ? lines[nextNonEmptyIdx].trim() : ''
-        const isNextLineDateLocation = nextNonEmptyLine && (
-          nextNonEmptyLine.match(/\d{4}\s*[-–—]/) ||
-          (nextNonEmptyLine.includes('|') && nextNonEmptyLine.match(/\d{4}/))
-        )
+        // Look ahead for date/location - check after degree
+        let foundDateLocation = false
+        let dateLocationLine = ''
+        let dateIdx = i + 1
         
-        if (isNextLineDateLocation) {
+        // Skip empty lines and degree to find date/location
+        while (dateIdx < lines.length && dateIdx < i + 5) {
+          const testLine = lines[dateIdx].trim()
+          if (!testLine) {
+            dateIdx++
+            continue
+          }
+          // Check if it's a date/location (has | and numbers, or date pattern)
+          if ((testLine.includes('|') && testLine.match(/\d{4}/)) ||
+              testLine.match(/\d{4}\s*[-–—]\s*(\d{4}|present|current)/i)) {
+            foundDateLocation = true
+            dateLocationLine = testLine
+            break
+          }
+          // If we hit a bullet or section, stop looking
+          if (testLine.startsWith('•') || sectionHeaders.includes(testLine)) {
+            break
+          }
+          dateIdx++
+        }
+        
+        if (foundDateLocation) {
           // Draw university name on left
           currentPage.drawText(line, {
             x: MARGIN,
@@ -346,19 +382,20 @@ export async function generatePDF(textContent: string) {
             color: rgb(0, 0, 0),
           })
           
-          // Skip degree line and draw date/location on right, same Y position
-          // Actually, we need to draw degree first, then date/location
-          // Let's draw university, then on next iteration handle degree and date
-          currentPage.drawText(line, {
-            x: MARGIN,
+          // Draw date/location on right, same line
+          const dateWidth = font.widthOfTextAtSize(dateLocationLine, fontSize)
+          const dateX = A4_WIDTH - MARGIN - dateWidth
+          currentPage.drawText(dateLocationLine, {
+            x: dateX,
             y: yPosition,
-            size: fontSize + 1,
-            font: boldFont,
+            size: fontSize,
+            font: font,
             color: rgb(0, 0, 0),
           })
-          i++
-          yPosition -= lineHeight + 2
-          continue
+          
+          // Skip to after the date/location line
+          i = dateIdx + 1
+          waitingForDateAfterUniversity = false
         } else {
           // Just draw university name
           currentPage.drawText(line, {
@@ -369,9 +406,9 @@ export async function generatePDF(textContent: string) {
             color: rgb(0, 0, 0),
           })
           i++
-          yPosition -= lineHeight + 2
-          continue
         }
+        yPosition -= lineHeight + 2
+        continue
       }
 
       // Check if it's a company name with em dash (old format) - skip this, use new format
