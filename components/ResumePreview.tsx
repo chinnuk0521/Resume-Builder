@@ -55,14 +55,39 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
       resume += `PROFESSIONAL SUMMARY\n\n${dataToUse.profile.professional_summary}\n\n`
     }
 
-    // Experience
+    // Education (matching image structure: University first, then degree, location, dates)
+    if (dataToUse.education && dataToUse.education.length > 0) {
+      resume += `EDUCATION\n\n`
+      dataToUse.education.forEach((edu: any) => {
+        // University name first (bold in PDF)
+        resume += `${edu.university || 'University'}\n\n`
+        // Degree
+        resume += `${edu.degree || 'Degree'}\n\n`
+        // Location and years
+        const details: string[] = []
+        if (edu.location) details.push(edu.location)
+        if (edu.years) details.push(edu.years)
+        if (details.length > 0) {
+          resume += `${details.join(' | ')}\n\n`
+        }
+      })
+    }
+
+    // Experience (matching image structure: Company first, then job title, dates, bullets)
     if (dataToUse.experiences && dataToUse.experiences.length > 0) {
-      resume += `EXPERIENCE\n\n`
+      resume += `WORK EXPERIENCE\n\n`
       dataToUse.experiences.forEach((exp: any) => {
-        resume += `${exp.job_title || 'Job Title'} — ${exp.company || 'Company'}\n\n`
+        // Company name first (bold in PDF)
+        resume += `${exp.company || 'Company'}\n\n`
+        // Job title
+        if (exp.job_title) {
+          resume += `${exp.job_title}\n\n`
+        }
+        // Dates
         if (exp.start_date || exp.end_date) {
           resume += `${exp.start_date || 'Start Date'} – ${exp.end_date || 'Present'}\n\n`
         }
+        // Bullet points
         if (exp.bullets && Array.isArray(exp.bullets) && exp.bullets.length > 0) {
           exp.bullets.forEach((bullet: string) => {
             if (bullet.trim()) {
@@ -73,33 +98,28 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
       })
     }
 
-    // Education
-    if (dataToUse.education && dataToUse.education.length > 0) {
-      resume += `EDUCATION\n\n`
-      dataToUse.education.forEach((edu: any) => {
-        resume += `${edu.degree || 'Degree'} — ${edu.university || 'University'}\n\n`
-        const details: string[] = []
-        if (edu.years) details.push(edu.years)
-        if (edu.location) details.push(edu.location)
-        if (details.length > 0) {
-          resume += `${details.join(' | ')}\n\n`
-        }
-      })
-    }
-
-    // Skills
+    // Skills (matching image structure: TECHNICAL SKILLS with categories)
     if (dataToUse.skills && dataToUse.skills.length > 0) {
-      resume += `SKILLS\n\n`
+      resume += `TECHNICAL SKILLS\n\n`
       const skillsByCategory: { [key: string]: string[] } = {}
       dataToUse.skills.forEach((skill: any) => {
         const cat = skill.category || 'others'
-        if (!skillsByCategory[cat]) skillsByCategory[cat] = []
-        skillsByCategory[cat].push(skill.skill_name)
+        // Map category names to match image format
+        const categoryMap: { [key: string]: string } = {
+          'programming': 'Programming',
+          'tools': 'Tools',
+          'databases': 'Databases',
+          'cloud': 'Cloud',
+          'others': 'Others'
+        }
+        const displayCategory = categoryMap[cat] || cat.charAt(0).toUpperCase() + cat.slice(1)
+        if (!skillsByCategory[displayCategory]) skillsByCategory[displayCategory] = []
+        skillsByCategory[displayCategory].push(skill.skill_name)
       })
 
       Object.entries(skillsByCategory).forEach(([category, skillNames]) => {
         if (skillNames.length > 0) {
-          resume += `• ${category.charAt(0).toUpperCase() + category.slice(1)}: ${skillNames.join(', ')}\n\n`
+          resume += `• ${category}: ${skillNames.join(', ')}\n\n`
         }
       })
     }
@@ -137,18 +157,6 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
           resume += `• ${name}\n\n`
         }
       })
-    }
-
-    // Links
-    resume += `LINKS\n\n`
-    if (dataToUse.profile?.linkedin) {
-      resume += `LinkedIn: ${dataToUse.profile.linkedin}\n\n`
-    }
-    if (dataToUse.profile?.portfolio) {
-      resume += `Portfolio: ${dataToUse.profile.portfolio}\n\n`
-    }
-    if (dataToUse.profile?.github) {
-      resume += `GitHub: ${dataToUse.profile.github}\n\n`
     }
 
     return resume.trim() || 'Start building your resume to see the preview here...'

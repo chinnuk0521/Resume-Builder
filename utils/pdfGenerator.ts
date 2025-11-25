@@ -33,11 +33,13 @@ export async function generatePDF(textContent: string) {
     // Parse the text content
     const lines = safeContent.split('\n').map(line => line.trim())
   
+    // Typography settings matching the template
     const fontSize = 10
     const lineHeight = 12
-    const sectionSpacing = 16
-    const paragraphSpacing = 8
-    const bulletIndent = 15
+    const sectionHeaderSize = 11
+    const sectionSpacing = 20 // Space before section header
+    const paragraphSpacing = 6 // Space between paragraphs
+    const bulletIndent = 12
     const minBottomMargin = 72 // Minimum space at bottom before new page
 
     let i = 0
@@ -56,110 +58,76 @@ export async function generatePDF(textContent: string) {
         yPosition = A4_HEIGHT - MARGIN
       }
 
-      // Check if it's the name (first substantial line that's not contact info or section header)
+      // Check if it's the name (first substantial line, all caps, not contact info)
       if (i === 0 && line.length > 3 && line.length < 50 && 
           !line.includes('@') && !line.includes('|') && 
           !line.match(/\d{10,}/) &&
-          !line.match(/^(PROFESSIONAL SUMMARY|EXPERIENCE|EDUCATION|SKILLS|ACHIEVEMENTS|PROJECTS|CERTIFICATIONS|LINKS)$/)) {
-        yPosition -= 8
-        // Center the name or align left
-        const nameWidth = boldFont.widthOfTextAtSize(line.toUpperCase(), 16)
-        const nameX = MARGIN // Left aligned
+          !line.match(/^(PROFESSIONAL SUMMARY|EXPERIENCE|EDUCATION|SKILLS|ACHIEVEMENTS|PROJECTS|CERTIFICATIONS|LINKS|WORK EXPERIENCE|TECHNICAL SKILLS)$/)) {
+        yPosition -= 4
+        // Name in bold, larger size
         currentPage.drawText(line.toUpperCase(), {
-          x: nameX,
+          x: MARGIN,
           y: yPosition,
           size: 16,
           font: boldFont,
           color: rgb(0, 0, 0),
         })
-        yPosition -= 20
+        yPosition -= 22
         i++
         continue
       }
 
       // Check if it's contact info (contains email, phone, or separators)
       if (line.includes('@') || line.includes('|') || line.match(/linkedin|github|portfolio/i)) {
-        // Wrap contact info if too long
-        const words = line.split(' ')
-        let currentLine = ''
-        let currentY = yPosition
-        
-        for (const word of words) {
-          const testLine = currentLine ? `${currentLine} ${word}` : word
-          const textWidth = font.widthOfTextAtSize(testLine, fontSize)
-          
-          if (textWidth > maxWidth && currentLine) {
-            currentPage.drawText(currentLine, {
-              x: MARGIN,
-              y: currentY,
-              size: fontSize,
-              font: font,
-              color: rgb(0, 0, 0),
-            })
-            currentY -= lineHeight
-            currentLine = word
-            
-            if (currentY < MARGIN + minBottomMargin) {
-              const newPage = pdfDoc.addPage([A4_WIDTH, A4_HEIGHT])
-              currentPage = newPage
-              currentY = A4_HEIGHT - MARGIN
-            }
-          } else {
-            currentLine = testLine
-          }
-        }
-        
-        if (currentLine) {
-          currentPage.drawText(currentLine, {
-            x: MARGIN,
-            y: currentY,
-            size: fontSize,
-            font: font,
-            color: rgb(0, 0, 0),
-          })
-          yPosition = currentY - lineHeight - 4
-        }
+        currentPage.drawText(line, {
+          x: MARGIN,
+          y: yPosition,
+          size: fontSize,
+          font: font,
+          color: rgb(0, 0, 0),
+        })
+        yPosition -= lineHeight + 8
         i++
         continue
       }
 
-      // Check if it's a section header (all caps, short, no bullets)
-      if (line === line.toUpperCase() && 
-          line.length > 3 && 
-          line.length < 50 && 
-          !line.startsWith('•') &&
-          !line.match(/^[a-z]/) &&
-          (line.match(/^(PROFESSIONAL SUMMARY|EXPERIENCE|EDUCATION|SKILLS|ACHIEVEMENTS|PROJECTS|CERTIFICATIONS|LINKS)$/) ||
-           (i > 0 && lines[i - 1] === ''))) {
+      // Check if it's a section header (all caps, matches known sections)
+      const sectionHeaders = [
+        'PROFESSIONAL SUMMARY', 'WORK EXPERIENCE', 'EXPERIENCE', 
+        'EDUCATION', 'TECHNICAL SKILLS', 'SKILLS', 
+        'ACHIEVEMENTS', 'PROJECTS', 'CERTIFICATIONS', 'LINKS'
+      ]
+      if (line === line.toUpperCase() && sectionHeaders.includes(line)) {
         yPosition -= sectionSpacing
         currentPage.drawText(line, {
           x: MARGIN,
           y: yPosition,
-          size: 12,
+          size: sectionHeaderSize,
           font: boldFont,
           color: rgb(0, 0, 0),
         })
-        yPosition -= lineHeight + 4
+        yPosition -= lineHeight + 8
         i++
         continue
       }
 
-      // Check if it's a job title or company (contains — or –)
+      // Check if it's a company name (bold, followed by job title on next line)
+      // Pattern: "COMPANY NAME" or "COMPANY NAME — Job Title"
       if (line.includes('—') || line.includes('–')) {
         const parts = line.split(/[—–]/).map(p => p.trim())
-        if (parts.length === 2) {
-          // Wrap if too long
-          const textWidth = boldFont.widthOfTextAtSize(line, fontSize + 1)
-          if (textWidth > maxWidth) {
-            // Split into two lines
-            currentPage.drawText(parts[0], {
-              x: MARGIN,
-              y: yPosition,
-              size: fontSize + 1,
-              font: boldFont,
-              color: rgb(0, 0, 0),
-            })
-            yPosition -= lineHeight
+        if (parts.length >= 2) {
+          // Company name in bold
+          currentPage.drawText(parts[0], {
+            x: MARGIN,
+            y: yPosition,
+            size: fontSize + 1,
+            font: boldFont,
+            color: rgb(0, 0, 0),
+          })
+          yPosition -= lineHeight + 2
+          
+          // Job title on next line
+          if (parts[1]) {
             if (yPosition < MARGIN + minBottomMargin) {
               const newPage = pdfDoc.addPage([A4_WIDTH, A4_HEIGHT])
               currentPage = newPage
@@ -168,27 +136,30 @@ export async function generatePDF(textContent: string) {
             currentPage.drawText(parts[1], {
               x: MARGIN,
               y: yPosition,
-              size: fontSize + 1,
-              font: boldFont,
+              size: fontSize,
+              font: font,
               color: rgb(0, 0, 0),
             })
-          } else {
-            currentPage.drawText(line, {
-              x: MARGIN,
-              y: yPosition,
-              size: fontSize + 1,
-              font: boldFont,
-              color: rgb(0, 0, 0),
-            })
+            yPosition -= lineHeight + 2
           }
+        } else {
+          // Single part - just draw it
+          currentPage.drawText(line, {
+            x: MARGIN,
+            y: yPosition,
+            size: fontSize + 1,
+            font: boldFont,
+            color: rgb(0, 0, 0),
+          })
           yPosition -= lineHeight + 2
-          i++
-          continue
         }
+        i++
+        continue
       }
 
-      // Check if it's a date range
-      if (line.match(/\d{4}\s*[-–—]\s*(\d{4}|present|current)/i)) {
+      // Check if it's a date range (format: "Jan 2025 - Sept 2025" or "Aug 2019 - May 2023")
+      if (line.match(/\w+\s+\d{4}\s*[-–—]\s*(\w+\s+\d{4}|present|current)/i) || 
+          line.match(/\d{4}\s*[-–—]\s*(\d{4}|present|current)/i)) {
         currentPage.drawText(line, {
           x: MARGIN,
           y: yPosition,
@@ -196,7 +167,7 @@ export async function generatePDF(textContent: string) {
           font: font,
           color: rgb(0, 0, 0),
         })
-        yPosition -= lineHeight + 2
+        yPosition -= lineHeight + paragraphSpacing
         i++
         continue
       }
@@ -265,7 +236,7 @@ export async function generatePDF(textContent: string) {
             })
           }
           
-          yPosition = currentY - lineHeight - 2
+          yPosition = currentY - lineHeight - paragraphSpacing
         } else {
           yPosition -= lineHeight / 2
         }
@@ -273,7 +244,7 @@ export async function generatePDF(textContent: string) {
         continue
       }
 
-      // Regular text - wrap if needed
+      // Regular text - wrap if needed (for summary paragraphs)
       if (line) {
         const words = line.split(' ')
         let currentLine = ''
@@ -315,7 +286,7 @@ export async function generatePDF(textContent: string) {
           })
         }
         
-        yPosition = currentY - lineHeight
+        yPosition = currentY - lineHeight - paragraphSpacing
       }
 
       i++
