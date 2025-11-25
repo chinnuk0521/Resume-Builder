@@ -280,7 +280,8 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
             fontFamily: 'monospace',
             wordWrap: 'break-word',
             overflowWrap: 'break-word',
-            maxWidth: '100%'
+            maxWidth: '100%',
+            textAlign: 'justify'
           }}>
             {resumeText.split('\n').map((line, idx) => {
               // Check if it's the name (first line, all caps, not contact info)
