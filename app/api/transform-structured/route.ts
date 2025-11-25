@@ -84,7 +84,12 @@ export async function POST(request: NextRequest) {
         location: edu.location || ''
       })),
       skills: resumeData.skills,
-      projects: resumeData.projects || [],
+      projects: (resumeData.projects || []).map(proj => ({
+        title: proj.title,
+        description: proj.description || '',
+        contribution: proj.contribution || '',
+        techStack: proj.techStack || ''
+      })),
       achievements: resumeData.achievements || [],
       certifications: resumeData.certifications || []
     }
