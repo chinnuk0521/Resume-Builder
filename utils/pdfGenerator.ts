@@ -1,4 +1,4 @@
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
+import { PDFDocument, rgb, StandardFonts, PDFName } from 'pdf-lib'
 
 // A4 dimensions in points (at 72 DPI)
 // A4: 210mm x 297mm = 595.3 x 841.9 points
@@ -6,6 +6,37 @@ const A4_WIDTH = 595.28
 const A4_HEIGHT = 841.89
 const MARGIN = 72 // 25mm = ~1 inch margins on all sides
 const CONTENT_WIDTH = A4_WIDTH - (2 * MARGIN) // 451.28 points
+
+// Helper function to extract URLs from contact string
+function extractUrls(contactLine: string): { linkedin?: string, github?: string, portfolio?: string } {
+  const urls: { linkedin?: string, github?: string, portfolio?: string } = {}
+  
+  // Extract LinkedIn
+  const linkedinMatch = contactLine.match(/(?:linkedin\.com\/in\/|linkedin\.com\/)[^\s|]+/i)
+  if (linkedinMatch) {
+    let url = linkedinMatch[0]
+    if (!url.startsWith('http')) url = 'https://' + url
+    urls.linkedin = url
+  }
+  
+  // Extract GitHub
+  const githubMatch = contactLine.match(/(?:github\.com\/)[^\s|]+/i)
+  if (githubMatch) {
+    let url = githubMatch[0]
+    if (!url.startsWith('http')) url = 'https://' + url
+    urls.github = url
+  }
+  
+  // Extract Portfolio
+  const portfolioMatch = contactLine.match(/(?:portfolio\.|www\.)?[a-zA-Z0-9.-]+\.(?:com|net|org|io|dev)[^\s|]*/i)
+  if (portfolioMatch && !portfolioMatch[0].includes('linkedin') && !portfolioMatch[0].includes('github')) {
+    let url = portfolioMatch[0]
+    if (!url.startsWith('http')) url = 'https://' + url
+    urls.portfolio = url
+  }
+  
+  return urls
+}
 
 export async function generatePDF(textContent: string) {
   // Input validation
@@ -29,6 +60,7 @@ export async function generatePDF(textContent: string) {
     const maxWidth = CONTENT_WIDTH
     let yPosition = A4_HEIGHT - MARGIN
     let currentPage = page
+    const annotations: Array<{ x: number, y: number, width: number, height: number, url: string }> = []
 
     // Parse the text content
     const lines = safeContent.split('\n').map(line => line.trim())
@@ -56,6 +88,7 @@ export async function generatePDF(textContent: string) {
         const newPage = pdfDoc.addPage([A4_WIDTH, A4_HEIGHT])
         currentPage = newPage
         yPosition = A4_HEIGHT - MARGIN
+        annotations.length = 0 // Clear annotations for new page
       }
 
       // Check if it's the name (first substantial line, all caps, not contact info)
@@ -64,9 +97,12 @@ export async function generatePDF(textContent: string) {
           !line.match(/\d{10,}/) &&
           !line.match(/^(PROFESSIONAL SUMMARY|EXPERIENCE|EDUCATION|SKILLS|ACHIEVEMENTS|PROJECTS|CERTIFICATIONS|LINKS|WORK EXPERIENCE|TECHNICAL SKILLS)$/)) {
         yPosition -= 4
-        // Name in bold, larger size
-        currentPage.drawText(line.toUpperCase(), {
-          x: MARGIN,
+        // Center the name
+        const nameText = line.toUpperCase()
+        const nameWidth = boldFont.widthOfTextAtSize(nameText, 16)
+        const nameX = (A4_WIDTH - nameWidth) / 2 // Center horizontally
+        currentPage.drawText(nameText, {
+          x: nameX,
           y: yPosition,
           size: 16,
           font: boldFont,
@@ -79,13 +115,104 @@ export async function generatePDF(textContent: string) {
 
       // Check if it's contact info (contains email, phone, or separators)
       if (line.includes('@') || line.includes('|') || line.match(/linkedin|github|portfolio/i)) {
-        currentPage.drawText(line, {
-          x: MARGIN,
-          y: yPosition,
-          size: fontSize,
-          font: font,
-          color: rgb(0, 0, 0),
-        })
+        // Extract URLs for hyperlinks
+        const urls = extractUrls(line)
+        
+        // Split contact line by | to handle individual links
+        const parts = line.split('|').map(p => p.trim())
+        
+        // Calculate total width to center the entire line
+        let totalWidth = 0
+        for (let p = 0; p < parts.length; p++) {
+          totalWidth += font.widthOfTextAtSize(parts[p], fontSize)
+          if (p < parts.length - 1) {
+            totalWidth += font.widthOfTextAtSize(' | ', fontSize)
+          }
+        }
+        
+        let currentX = (A4_WIDTH - totalWidth) / 2 // Center the entire contact line
+        
+        // Draw contact info with hyperlinks
+        for (let partIdx = 0; partIdx < parts.length; partIdx++) {
+          const part = parts[partIdx]
+          const partWidth = font.widthOfTextAtSize(part, fontSize)
+          
+          // Check if this part is a URL that should be a hyperlink
+          let isLink = false
+          let linkUrl = ''
+          
+          if (part.toLowerCase().includes('linkedin') && urls.linkedin) {
+            isLink = true
+            linkUrl = urls.linkedin
+          } else if (part.toLowerCase().includes('github') && urls.github) {
+            isLink = true
+            linkUrl = urls.github
+          } else if (urls.portfolio) {
+            // Check if part contains portfolio URL
+            const portfolioText = urls.portfolio.replace('https://', '').replace('http://', '')
+            if (part.includes(portfolioText) || part.toLowerCase().includes('portfolio')) {
+              isLink = true
+              linkUrl = urls.portfolio
+            }
+          }
+          
+          // Draw the text (blue for links, black for others)
+          currentPage.drawText(part, {
+            x: currentX,
+            y: yPosition,
+            size: fontSize,
+            font: font,
+            color: isLink ? rgb(0, 0, 0.8) : rgb(0, 0, 0), // Blue for links
+          })
+          
+          // Store annotation info for links
+          if (isLink && linkUrl) {
+            annotations.push({
+              x: currentX,
+              y: yPosition - 2,
+              width: partWidth,
+              height: fontSize + 4,
+              url: linkUrl
+            })
+          }
+          
+          currentX += partWidth
+          
+          // Add separator if not last part
+          if (partIdx < parts.length - 1) {
+            const separatorWidth = font.widthOfTextAtSize(' | ', fontSize)
+            currentPage.drawText(' | ', {
+              x: currentX,
+              y: yPosition,
+              size: fontSize,
+              font: font,
+              color: rgb(0, 0, 0),
+            })
+            currentX += separatorWidth
+          }
+        }
+        
+        // Add hyperlink annotations to the page
+        if (annotations.length > 0) {
+          const pageAnnots = []
+          for (const annot of annotations) {
+            const linkAnnotation = pdfDoc.context.obj({
+              Type: 'Annot',
+              Subtype: 'Link',
+              Rect: [annot.x, annot.y, annot.x + annot.width, annot.y + annot.height],
+              Border: [0, 0, 0],
+              A: {
+                Type: 'Action',
+                S: 'URI',
+                URI: pdfDoc.context.obj(annot.url),
+              },
+            })
+            pageAnnots.push(pdfDoc.context.register(linkAnnotation))
+          }
+          currentPage.node.set(PDFName.of('Annots'), pdfDoc.context.obj(pageAnnots))
+          annotations.length = 0 // Clear after adding
+        }
+        
         yPosition -= lineHeight + 8
         i++
         continue

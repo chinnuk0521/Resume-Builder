@@ -210,7 +210,7 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
           lineHeight: '12px',
           fontFamily: 'monospace'
         }}>
-          <pre className="whitespace-pre-wrap text-gray-800 leading-relaxed m-0 p-0" style={{
+          <div className="text-gray-800 leading-relaxed" style={{
             fontSize: '10px',
             lineHeight: '12px',
             fontFamily: 'monospace',
@@ -218,8 +218,70 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
             overflowWrap: 'break-word',
             maxWidth: '100%'
           }}>
-            {resumeText}
-          </pre>
+            {resumeText.split('\n').map((line, idx) => {
+              // Check if it's the name (first line, all caps, not contact info)
+              if (idx === 0 && line.length > 3 && line.length < 50 && 
+                  !line.includes('@') && !line.includes('|') &&
+                  !line.match(/^(PROFESSIONAL SUMMARY|EXPERIENCE|EDUCATION|SKILLS|ACHIEVEMENTS|PROJECTS|CERTIFICATIONS|LINKS|WORK EXPERIENCE|TECHNICAL SKILLS)$/)) {
+                return (
+                  <div key={idx} className="text-center font-bold text-base mb-2" style={{ fontSize: '16px' }}>
+                    {line}
+                  </div>
+                )
+              }
+              
+              // Check if it's contact info
+              if (line.includes('@') || line.includes('|') || line.match(/linkedin|github|portfolio/i)) {
+                const parts = line.split('|').map(p => p.trim())
+                return (
+                  <div key={idx} className="text-center mb-4">
+                    {parts.map((part, partIdx) => {
+                      // Check if it's a URL
+                      const isLinkedIn = part.toLowerCase().includes('linkedin')
+                      const isGitHub = part.toLowerCase().includes('github')
+                      const isPortfolio = part.toLowerCase().includes('portfolio') || 
+                                        (!part.includes('@') && !part.match(/^\d/) && 
+                                         (part.includes('.com') || part.includes('.net') || part.includes('.org')))
+                      
+                      let url = ''
+                      if (isLinkedIn) {
+                        url = part.includes('http') ? part : `https://${part.replace(/^linkedin\.com\/in\//, 'linkedin.com/in/')}`
+                      } else if (isGitHub) {
+                        url = part.includes('http') ? part : `https://${part}`
+                      } else if (isPortfolio) {
+                        url = part.includes('http') ? part : `https://${part}`
+                      }
+                      
+                      return (
+                        <span key={partIdx}>
+                          {url ? (
+                            <a 
+                              href={url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline"
+                            >
+                              {part}
+                            </a>
+                          ) : (
+                            <span>{part}</span>
+                          )}
+                          {partIdx < parts.length - 1 && <span> | </span>}
+                        </span>
+                      )
+                    })}
+                  </div>
+                )
+              }
+              
+              // Regular line
+              return (
+                <div key={idx} className="whitespace-pre-wrap">
+                  {line || '\u00A0'}
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
     </div>
