@@ -676,9 +676,22 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                       type="text"
                       value={categorySkills.map(s => s.skill_name).join(', ')}
                       onChange={(e) => {
-                        const skillNames = e.target.value.split(',').map(s => s.trim()).filter(s => s)
+                        const inputValue = e.target.value
+                        const skillNames = inputValue.split(',').map(s => s.trim()).filter(s => s.length > 0)
                         const otherSkills = skills.filter(s => s.category !== category)
-                        const newSkills = skillNames.map(name => ({ category, skill_name: name }))
+                        const newSkills = skillNames.length > 0 
+                          ? skillNames.map(name => ({ category, skill_name: name }))
+                          : []
+                        setSkills([...otherSkills, ...newSkills])
+                      }}
+                      onBlur={(e) => {
+                        // Ensure skills are saved even if input ends with comma
+                        const inputValue = e.target.value
+                        const skillNames = inputValue.split(',').map(s => s.trim()).filter(s => s.length > 0)
+                        const otherSkills = skills.filter(s => s.category !== category)
+                        const newSkills = skillNames.length > 0 
+                          ? skillNames.map(name => ({ category, skill_name: name }))
+                          : []
                         setSkills([...otherSkills, ...newSkills])
                       }}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"

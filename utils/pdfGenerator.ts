@@ -620,27 +620,58 @@ export async function generatePDF(textContent: string) {
         continue
       }
 
-      // Regular text - wrap if needed (for summary paragraphs)
+      // Regular text - wrap if needed with justification (for summary paragraphs)
       if (line) {
-        const words = line.split(' ')
-        let currentLine = ''
+        const words = line.split(' ').filter(w => w.length > 0)
+        let currentLineWords: string[] = []
         let currentY = yPosition
+        const isSummaryParagraph = currentSection === 'PROFESSIONAL SUMMARY'
         
         for (const word of words) {
-          const testLine = currentLine ? `${currentLine} ${word}` : word
+          const testLine = currentLineWords.length > 0 
+            ? currentLineWords.join(' ') + ' ' + word 
+            : word
           const textWidth = font.widthOfTextAtSize(testLine, fontSize)
           
-          if (textWidth > maxWidth && currentLine) {
-            // Draw current line and start new one
-            currentPage.drawText(currentLine, {
-              x: MARGIN,
-              y: currentY,
-              size: fontSize,
-              font: font,
-              color: rgb(0, 0, 0),
-            })
+          if (textWidth > maxWidth && currentLineWords.length > 0) {
+            // Draw current line with justification if it's a summary paragraph
+            if (isSummaryParagraph && currentLineWords.length > 1) {
+              // Justify text by calculating space between words
+              const lineText = currentLineWords.join(' ')
+              const lineWidth = font.widthOfTextAtSize(lineText, fontSize)
+              const totalSpaces = currentLineWords.length - 1
+              const extraSpace = (maxWidth - lineWidth) / totalSpaces
+              
+              let xPos = MARGIN
+              for (let wIdx = 0; wIdx < currentLineWords.length; wIdx++) {
+                const word = currentLineWords[wIdx]
+                currentPage.drawText(word, {
+                  x: xPos,
+                  y: currentY,
+                  size: fontSize,
+                  font: font,
+                  color: rgb(0, 0, 0),
+                })
+                xPos += font.widthOfTextAtSize(word, fontSize)
+                if (wIdx < currentLineWords.length - 1) {
+                  // Add space plus extra space for justification
+                  const spaceWidth = font.widthOfTextAtSize(' ', fontSize) + extraSpace
+                  xPos += spaceWidth
+                }
+              }
+            } else {
+              // Left-align for non-summary text
+              currentPage.drawText(currentLineWords.join(' '), {
+                x: MARGIN,
+                y: currentY,
+                size: fontSize,
+                font: font,
+                color: rgb(0, 0, 0),
+              })
+            }
+            
             currentY -= lineHeight
-            currentLine = word
+            currentLineWords = [word]
             
             if (currentY < MARGIN + minBottomMargin) {
               const newPage = pdfDoc.addPage([A4_WIDTH, A4_HEIGHT])
@@ -648,18 +679,45 @@ export async function generatePDF(textContent: string) {
               currentY = A4_HEIGHT - MARGIN
             }
           } else {
-            currentLine = testLine
+            currentLineWords.push(word)
           }
         }
         
-        if (currentLine) {
-          currentPage.drawText(currentLine, {
-            x: MARGIN,
-            y: currentY,
-            size: fontSize,
-            font: font,
-            color: rgb(0, 0, 0),
-          })
+        // Draw remaining line
+        if (currentLineWords.length > 0) {
+          if (isSummaryParagraph && currentLineWords.length > 1) {
+            // Justify last line too if it's summary
+            const lineText = currentLineWords.join(' ')
+            const lineWidth = font.widthOfTextAtSize(lineText, fontSize)
+            const totalSpaces = currentLineWords.length - 1
+            const extraSpace = totalSpaces > 0 ? (maxWidth - lineWidth) / totalSpaces : 0
+            
+            let xPos = MARGIN
+            for (let wIdx = 0; wIdx < currentLineWords.length; wIdx++) {
+              const word = currentLineWords[wIdx]
+              currentPage.drawText(word, {
+                x: xPos,
+                y: currentY,
+                size: fontSize,
+                font: font,
+                color: rgb(0, 0, 0),
+              })
+              xPos += font.widthOfTextAtSize(word, fontSize)
+              if (wIdx < currentLineWords.length - 1) {
+                const spaceWidth = font.widthOfTextAtSize(' ', fontSize) + extraSpace
+                xPos += spaceWidth
+              }
+            }
+          } else {
+            // Left-align for non-summary text
+            currentPage.drawText(currentLineWords.join(' '), {
+              x: MARGIN,
+              y: currentY,
+              size: fontSize,
+              font: font,
+              color: rgb(0, 0, 0),
+            })
+          }
         }
         
         yPosition = currentY - lineHeight - paragraphSpacing

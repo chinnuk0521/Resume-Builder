@@ -84,9 +84,9 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
     if (dataToUse.education && dataToUse.education.length > 0) {
       resume += `EDUCATION\n\n`
       dataToUse.education.forEach((edu: any) => {
-        // University name first (bold in PDF)
+        // University name first (bold in PDF) - on its own line
         resume += `${edu.university || 'University'}\n\n`
-        // Degree with years/location on same line (right-aligned in PDF)
+        // Degree with years/location on same line (degree left, dates/location right)
         const degree = edu.degree || 'Degree'
         const details: string[] = []
         if (edu.years) details.push(edu.years)
@@ -104,9 +104,9 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
     if (dataToUse.experiences && dataToUse.experiences.length > 0) {
       resume += `WORK EXPERIENCE\n\n`
       dataToUse.experiences.forEach((exp: any) => {
-        // Company name first (bold in PDF)
+        // Company name first (bold in PDF) - on its own line
         resume += `${exp.company || 'Company'}\n\n`
-        // Job title with dates on same line (right-aligned in PDF)
+        // Job title with dates on same line (job title left, dates right)
         if (exp.job_title) {
           if (exp.start_date || exp.end_date) {
             const dates = `${exp.start_date || 'Start Date'} – ${exp.end_date || 'Present'}`
