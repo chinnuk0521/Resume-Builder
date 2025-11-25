@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { generatePDF } from '@/utils/pdfGenerator'
+import { downloadPDF } from '@/utils/pdfGenerator'
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false })
 
@@ -69,7 +69,7 @@ export default function ResumeEditor({ content, onUpdate, isProcessing }: Resume
       }
       
       // Add timeout for PDF generation (30 seconds)
-      const pdfPromise = generatePDF(plainText)
+      const pdfPromise = downloadPDF(plainText)
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('PDF generation timeout')), 30000)
       )

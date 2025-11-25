@@ -508,7 +508,7 @@ export async function generatePDF(textContent: string) {
       throw new Error('Failed to generate PDF content')
     }
     
-    // Create blob and download
+    // Create blob
     const arrayBuffer = pdfBytes.buffer instanceof ArrayBuffer 
       ? pdfBytes.buffer 
       : new Uint8Array(pdfBytes).buffer
@@ -519,21 +519,44 @@ export async function generatePDF(textContent: string) {
       throw new Error('Generated PDF is empty')
     }
     
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = 'resume-ats-optimized.pdf'
-    document.body.appendChild(link)
-    link.click()
-    
-    // Cleanup
-    setTimeout(() => {
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
-    }, 100)
+    return blob
     
   } catch (error: any) {
     console.error('[PDF Generator] Error:', error.message)
     throw new Error(`PDF generation failed: ${error.message || 'Unknown error'}`)
+  }
+}
+
+// Helper function to download PDF
+export async function downloadPDF(textContent: string) {
+  const blob = await generatePDF(textContent)
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'resume-ats-optimized.pdf'
+  document.body.appendChild(link)
+  link.click()
+  
+  // Cleanup
+  setTimeout(() => {
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }, 100)
+}
+
+// Helper function to preview PDF
+export async function previewPDF(textContent: string) {
+  const blob = await generatePDF(textContent)
+  const url = URL.createObjectURL(blob)
+  // Open PDF in new window
+  const newWindow = window.open(url, '_blank')
+  if (!newWindow) {
+    alert('Please allow popups to preview the PDF')
+    URL.revokeObjectURL(url)
+  } else {
+    // Cleanup URL after window closes (best effort)
+    newWindow.addEventListener('beforeunload', () => {
+      URL.revokeObjectURL(url)
+    })
   }
 }

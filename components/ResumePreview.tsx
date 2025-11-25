@@ -1,7 +1,8 @@
 'use client'
 
-import { generatePDF } from '@/utils/pdfGenerator'
-import { HiOutlineArrowDownTray } from 'react-icons/hi2'
+import { downloadPDF, previewPDF } from '@/utils/pdfGenerator'
+import { HiOutlineArrowDownTray, HiOutlineEye } from 'react-icons/hi2'
+import { useState } from 'react'
 
 interface ResumePreviewProps {
   profileData?: any
@@ -187,6 +188,24 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
   }
 
   const resumeText = formatResume()
+  const [isGenerating, setIsGenerating] = useState(false)
+
+  const handlePreview = async () => {
+    if (!resumeText || resumeText.includes('Start building')) {
+      alert('Please build your resume first')
+      return
+    }
+
+    setIsGenerating(true)
+    try {
+      await previewPDF(resumeText)
+    } catch (error) {
+      console.error('Error generating PDF:', error)
+      alert('Failed to generate PDF')
+    } finally {
+      setIsGenerating(false)
+    }
+  }
 
   const handleDownload = async () => {
     if (!resumeText || resumeText.includes('Start building')) {
@@ -194,11 +213,14 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
       return
     }
 
+    setIsGenerating(true)
     try {
-      await generatePDF(resumeText)
+      await downloadPDF(resumeText)
     } catch (error) {
       console.error('Error generating PDF:', error)
       alert('Failed to generate PDF')
+    } finally {
+      setIsGenerating(false)
     }
   }
 
@@ -211,13 +233,24 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
             <p className="text-gray-300 text-sm mt-0.5">A4 Format - Live preview as you type</p>
           </div>
           {resumeText && !resumeText.includes('Start building') && (
-            <button
-              onClick={handleDownload}
-              className="flex items-center gap-2 px-4 py-2 bg-white text-gray-800 rounded-lg hover:bg-gray-100 text-sm font-semibold transition-all shadow-md hover:shadow-lg"
-            >
-              <HiOutlineArrowDownTray className="w-5 h-5" />
-              <span>Download PDF</span>
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handlePreview}
+                disabled={isGenerating}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition-all shadow-md hover:shadow-lg"
+              >
+                <HiOutlineEye className="w-5 h-5" />
+                <span>{isGenerating ? 'Generating...' : 'Preview PDF'}</span>
+              </button>
+              <button
+                onClick={handleDownload}
+                disabled={isGenerating}
+                className="flex items-center gap-2 px-4 py-2 bg-white text-gray-800 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition-all shadow-md hover:shadow-lg"
+              >
+                <HiOutlineArrowDownTray className="w-5 h-5" />
+                <span>{isGenerating ? 'Generating...' : 'Download PDF'}</span>
+              </button>
+            </div>
           )}
         </div>
       </div>
