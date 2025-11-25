@@ -62,7 +62,13 @@ export async function POST(request: NextRequest) {
     // Convert structured data to ResumeData format
     const formattedData: ResumeData = {
       name: resumeData.name,
-      contact: resumeData.contact,
+      contact: {
+        email: resumeData.contact.email,
+        phone: resumeData.contact.phone || '',
+        linkedin: resumeData.contact.linkedin || '',
+        portfolio: resumeData.contact.portfolio || '',
+        github: resumeData.contact.github || ''
+      },
       summary: resumeData.summary,
       experience: resumeData.experience.map(exp => ({
         title: exp.title,
