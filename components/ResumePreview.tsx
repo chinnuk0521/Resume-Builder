@@ -80,36 +80,43 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
       resume += `PROFESSIONAL SUMMARY\n\n${dataToUse.profile.professional_summary}\n\n`
     }
 
-    // Education (matching image structure: University first, then degree, location, dates)
+    // Education (matching image structure: University first, then degree with dates/location on same line)
     if (dataToUse.education && dataToUse.education.length > 0) {
       resume += `EDUCATION\n\n`
       dataToUse.education.forEach((edu: any) => {
         // University name first (bold in PDF)
         resume += `${edu.university || 'University'}\n\n`
-        // Degree
-        resume += `${edu.degree || 'Degree'}\n\n`
-        // Years and location - will be right-aligned in PDF
+        // Degree with years/location on same line (right-aligned in PDF)
+        const degree = edu.degree || 'Degree'
         const details: string[] = []
         if (edu.years) details.push(edu.years)
         if (edu.location) details.push(edu.location)
         if (details.length > 0) {
-          resume += `${details.join(' | ')}\n\n`
+          // Format: "Degree||DATE:2019 - 2023 | Location" - special marker for PDF generator
+          resume += `${degree}||DATE:${details.join(' | ')}\n\n`
+        } else {
+          resume += `${degree}\n\n`
         }
       })
     }
 
-    // Experience (matching image structure: Company first, then job title, dates, bullets)
+    // Experience (matching image structure: Company first, then job title with dates on same line)
     if (dataToUse.experiences && dataToUse.experiences.length > 0) {
       resume += `WORK EXPERIENCE\n\n`
       dataToUse.experiences.forEach((exp: any) => {
         // Company name first (bold in PDF)
         resume += `${exp.company || 'Company'}\n\n`
-        // Job title
+        // Job title with dates on same line (right-aligned in PDF)
         if (exp.job_title) {
-          resume += `${exp.job_title}\n\n`
-        }
-        // Dates
-        if (exp.start_date || exp.end_date) {
+          if (exp.start_date || exp.end_date) {
+            const dates = `${exp.start_date || 'Start Date'} – ${exp.end_date || 'Present'}`
+            // Format: "Job Title||DATE:Jan 2025 – Sept 2025" - special marker for PDF generator
+            resume += `${exp.job_title}||DATE:${dates}\n\n`
+          } else {
+            resume += `${exp.job_title}\n\n`
+          }
+        } else if (exp.start_date || exp.end_date) {
+          // Just dates if no job title
           resume += `${exp.start_date || 'Start Date'} – ${exp.end_date || 'Present'}\n\n`
         }
         // Bullet points
@@ -334,8 +341,22 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
                 )
               }
               
+              // Check for special format with ||DATE: marker
+              if (line.includes('||DATE:')) {
+                const parts = line.split('||DATE:')
+                if (parts.length === 2) {
+                  const leftText = parts[0].trim()
+                  const rightText = parts[1].trim()
+                  return (
+                    <div key={idx} className="flex justify-between items-center mb-2">
+                      <span>{leftText}</span>
+                      <span className="text-right">{rightText}</span>
+                    </div>
+                  )
+                }
+              }
+              
               // Check if it's a date/location line that should be right-aligned
-              // (follows a company or university name)
               const isDateLocation = (line.match(/\w+\s+\d{4}\s*[-–—]/) || 
                                      line.match(/\d{4}\s*[-–—]/) ||
                                      (line.includes('|') && (line.match(/\d{4}/) || line.match(/present|current/i))))
@@ -343,9 +364,8 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
               // Check if previous lines indicate we're in an experience/education entry
               const linesArray = resumeText.split('\n')
               let foundCompanyOrUniversity = false
-              let foundJobTitleOrDegree = false
               
-              // Look backwards to find company/university and job title/degree
+              // Look backwards to find company/university
               for (let j = idx - 1; j >= 0 && j >= idx - 5; j--) {
                 const prevLine = linesArray[j]?.trim() || ''
                 if (!prevLine) continue
@@ -355,20 +375,15 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
                   break
                 }
                 
-                // Check if it's a company/university (bold, not a date, not a bullet)
+                // Check if it's a company/university (not a date, not a bullet, not a job title/degree with ||DATE:)
                 if (!prevLine.includes('—') && 
                     !prevLine.includes('•') && 
                     !prevLine.match(/\d{4}\s*[-–—]/) &&
                     !prevLine.match(/\w+\s+\d{4}\s*[-–—]/) &&
-                    !prevLine.includes('|')) {
-                  if (!foundJobTitleOrDegree) {
-                    foundCompanyOrUniversity = true
-                  }
-                } else if (foundCompanyOrUniversity && 
-                          !prevLine.startsWith('•') &&
-                          !prevLine.match(/\d{4}\s*[-–—]/) &&
-                          !prevLine.match(/\w+\s+\d{4}\s*[-–—]/)) {
-                  foundJobTitleOrDegree = true
+                    !prevLine.includes('|') &&
+                    !prevLine.includes('||DATE:')) {
+                  foundCompanyOrUniversity = true
+                  break
                 }
               }
               

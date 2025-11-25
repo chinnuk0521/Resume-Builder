@@ -264,15 +264,50 @@ export async function generatePDF(textContent: string) {
         // This is likely a company name
         waitingForDateAfterCompany = true
         waitingForDateAfterUniversity = false
-        currentPage.drawText(line, {
-          x: MARGIN,
-          y: yPosition,
-          size: fontSize + 1,
-          font: boldFont,
-          color: rgb(0, 0, 0),
-        })
+        
+        // Check if next line is a date - if so, draw both on same line
+        const nextLine = i + 1 < lines.length ? lines[i + 1].trim() : ''
+        const isNextLineDate = nextLine && (
+          nextLine.match(/\w+\s+\d{4}\s*[-–—]\s*(\w+\s+\d{4}|present|current)/i) ||
+          nextLine.match(/\d{4}\s*[-–—]\s*(\d{4}|present|current)/i)
+        )
+        
+        if (isNextLineDate) {
+          // Draw company name on left
+          currentPage.drawText(line, {
+            x: MARGIN,
+            y: yPosition,
+            size: fontSize + 1,
+            font: boldFont,
+            color: rgb(0, 0, 0),
+          })
+          
+          // Draw date on right, same line
+          const dateWidth = font.widthOfTextAtSize(nextLine, fontSize)
+          const dateX = A4_WIDTH - MARGIN - dateWidth
+          currentPage.drawText(nextLine, {
+            x: dateX,
+            y: yPosition,
+            size: fontSize,
+            font: font,
+            color: rgb(0, 0, 0),
+          })
+          
+          // Skip the date line since we already drew it
+          i += 2
+          waitingForDateAfterCompany = false
+        } else {
+          // Just draw company name, wait for date on next iteration
+          currentPage.drawText(line, {
+            x: MARGIN,
+            y: yPosition,
+            size: fontSize + 1,
+            font: boldFont,
+            color: rgb(0, 0, 0),
+          })
+          i++
+        }
         yPosition -= lineHeight + 2
-        i++
         continue
       }
 
@@ -289,16 +324,54 @@ export async function generatePDF(textContent: string) {
         // This is likely a university name
         waitingForDateAfterUniversity = true
         waitingForDateAfterCompany = false
-        currentPage.drawText(line, {
-          x: MARGIN,
-          y: yPosition,
-          size: fontSize + 1,
-          font: boldFont,
-          color: rgb(0, 0, 0),
-        })
-        yPosition -= lineHeight + 2
-        i++
-        continue
+        
+        // Check if next non-empty line after degree is date/location
+        let nextNonEmptyIdx = i + 1
+        while (nextNonEmptyIdx < lines.length && !lines[nextNonEmptyIdx].trim()) {
+          nextNonEmptyIdx++
+        }
+        const nextNonEmptyLine = nextNonEmptyIdx < lines.length ? lines[nextNonEmptyIdx].trim() : ''
+        const isNextLineDateLocation = nextNonEmptyLine && (
+          nextNonEmptyLine.match(/\d{4}\s*[-–—]/) ||
+          (nextNonEmptyLine.includes('|') && nextNonEmptyLine.match(/\d{4}/))
+        )
+        
+        if (isNextLineDateLocation) {
+          // Draw university name on left
+          currentPage.drawText(line, {
+            x: MARGIN,
+            y: yPosition,
+            size: fontSize + 1,
+            font: boldFont,
+            color: rgb(0, 0, 0),
+          })
+          
+          // Skip degree line and draw date/location on right, same Y position
+          // Actually, we need to draw degree first, then date/location
+          // Let's draw university, then on next iteration handle degree and date
+          currentPage.drawText(line, {
+            x: MARGIN,
+            y: yPosition,
+            size: fontSize + 1,
+            font: boldFont,
+            color: rgb(0, 0, 0),
+          })
+          i++
+          yPosition -= lineHeight + 2
+          continue
+        } else {
+          // Just draw university name
+          currentPage.drawText(line, {
+            x: MARGIN,
+            y: yPosition,
+            size: fontSize + 1,
+            font: boldFont,
+            color: rgb(0, 0, 0),
+          })
+          i++
+          yPosition -= lineHeight + 2
+          continue
+        }
       }
 
       // Check if it's a company name with em dash (old format) - skip this, use new format
@@ -350,13 +423,48 @@ export async function generatePDF(textContent: string) {
         continue
       }
       
-      // Job title or degree - regular text after company/university, don't reset waiting flags
+      // Check for special format: "Job Title||DATE:Jan 2025 – Sept 2025" or "Degree||DATE:2019 - 2023 | Location"
+      if (line.includes('||DATE:')) {
+        const parts = line.split('||DATE:')
+        if (parts.length === 2) {
+          const leftText = parts[0].trim() // Job title or degree
+          const rightText = parts[1].trim() // Dates or location/years
+          
+          // Draw left text (job title or degree)
+          currentPage.drawText(leftText, {
+            x: MARGIN,
+            y: yPosition,
+            size: fontSize,
+            font: font,
+            color: rgb(0, 0, 0),
+          })
+          
+          // Draw right text (dates or location/years) - right-aligned
+          const rightWidth = font.widthOfTextAtSize(rightText, fontSize)
+          const rightX = A4_WIDTH - MARGIN - rightWidth
+          currentPage.drawText(rightText, {
+            x: rightX,
+            y: yPosition,
+            size: fontSize,
+            font: font,
+            color: rgb(0, 0, 0),
+          })
+          
+          yPosition -= lineHeight + 2
+          waitingForDateAfterCompany = false
+          waitingForDateAfterUniversity = false
+          i++
+          continue
+        }
+      }
+
+      // Job title or degree - regular text after company/university
       if ((waitingForDateAfterCompany || waitingForDateAfterUniversity) &&
           !line.startsWith('•') &&
           !line.match(/\w+\s+\d{4}\s*[-–—]/) &&
           !line.match(/\d{4}\s*[-–—]/) &&
           !line.includes('|')) {
-        // This is likely a job title or degree - draw it normally, keep waiting for date
+        // This is likely a job title or degree - draw it normally
         currentPage.drawText(line, {
           x: MARGIN,
           y: yPosition,
