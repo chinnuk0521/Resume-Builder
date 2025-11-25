@@ -224,7 +224,7 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
                   !line.includes('@') && !line.includes('|') &&
                   !line.match(/^(PROFESSIONAL SUMMARY|EXPERIENCE|EDUCATION|SKILLS|ACHIEVEMENTS|PROJECTS|CERTIFICATIONS|LINKS|WORK EXPERIENCE|TECHNICAL SKILLS)$/)) {
                 return (
-                  <div key={idx} className="text-center font-bold text-base mb-2" style={{ fontSize: '16px' }}>
+                  <div key={idx} className="text-center font-bold mb-2" style={{ fontSize: '25px' }}>
                     {line}
                   </div>
                 )

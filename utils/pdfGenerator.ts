@@ -97,18 +97,19 @@ export async function generatePDF(textContent: string) {
           !line.match(/\d{10,}/) &&
           !line.match(/^(PROFESSIONAL SUMMARY|EXPERIENCE|EDUCATION|SKILLS|ACHIEVEMENTS|PROJECTS|CERTIFICATIONS|LINKS|WORK EXPERIENCE|TECHNICAL SKILLS)$/)) {
         yPosition -= 4
-        // Center the name
+        // Center the name with font size 25
         const nameText = line.toUpperCase()
-        const nameWidth = boldFont.widthOfTextAtSize(nameText, 16)
+        const nameSize = 25
+        const nameWidth = boldFont.widthOfTextAtSize(nameText, nameSize)
         const nameX = (A4_WIDTH - nameWidth) / 2 // Center horizontally
         currentPage.drawText(nameText, {
           x: nameX,
           y: yPosition,
-          size: 16,
+          size: nameSize,
           font: boldFont,
           color: rgb(0, 0, 0),
         })
-        yPosition -= 22
+        yPosition -= 30 // Increased spacing for larger font
         i++
         continue
       }
