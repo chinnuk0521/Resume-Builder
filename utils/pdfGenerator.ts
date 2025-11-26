@@ -303,7 +303,7 @@ export async function generatePDF(textContent: string) {
           
           // In Education section: left = school, right = location + dates, next line = course
           if (currentSection === 'EDUCATION') {
-            // Draw school name on left (bold)
+            // Draw school name on left (bold) - start from absolute left margin
             currentPage.drawText(leftCell, {
               x: MARGIN,
               y: yPosition,
@@ -312,7 +312,7 @@ export async function generatePDF(textContent: string) {
               color: rgb(0, 0, 0),
             })
             
-            // Draw location and dates on right
+            // Draw location and dates on right - align to absolute right margin
             if (rightCell) {
               const rightWidth = font.widthOfTextAtSize(rightCell, fontSize)
               const rightX = A4_WIDTH - MARGIN - rightWidth
@@ -333,7 +333,7 @@ export async function generatePDF(textContent: string) {
           
           // In Work Experience section: left = job title, right = location + dates, next line = company
           if (currentSection === 'WORK EXPERIENCE' || currentSection === 'EXPERIENCE') {
-            // Draw job title on left
+            // Draw job title on left - start from absolute left margin
             currentPage.drawText(leftCell, {
               x: MARGIN,
               y: yPosition,
@@ -342,7 +342,7 @@ export async function generatePDF(textContent: string) {
               color: rgb(0, 0, 0),
             })
             
-            // Draw location and dates on right
+            // Draw location and dates on right - align to absolute right margin
             if (rightCell) {
               const rightWidth = font.widthOfTextAtSize(rightCell, fontSize)
               const rightX = A4_WIDTH - MARGIN - rightWidth

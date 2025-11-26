@@ -504,9 +504,9 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
                 const cells = line.split('|').map(c => c.trim()).filter(c => c.length > 0)
                 if (cells.length >= 2) {
                   return (
-                    <div key={idx} className="flex justify-between items-center mb-2">
-                      <span className="font-semibold">{cells[0]}</span>
-                      <span className="text-right">{cells[1]}</span>
+                    <div key={idx} className="flex justify-between items-center mb-2 w-full" style={{ width: '100%' }}>
+                      <span className="font-semibold" style={{ textAlign: 'left' }}>{cells[0]}</span>
+                      <span style={{ textAlign: 'right', marginLeft: 'auto' }}>{cells[1]}</span>
                     </div>
                   )
                 }
