@@ -124,35 +124,32 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
     try {
       let profileId = profileData?.profile?.id
 
+      // Clean and validate data before saving
+      const cleanedFormData = {
+        first_name: (formData.first_name || '').trim(),
+        last_name: (formData.last_name || '').trim(),
+        middle_name: (formData.middle_name || '').trim(),
+        email: (formData.email || '').trim().toLowerCase(),
+        phone: (formData.phone || '').trim(),
+        linkedin: (formData.linkedin || '').trim(),
+        github: (formData.github || '').trim(),
+        portfolio: (formData.portfolio || '').trim(),
+        professional_summary: (formData.professional_summary || '').trim()
+      }
+
       if (profileId) {
-        await supabase
+        const { error } = await supabase
           .from('user_profiles')
-          .update({
-            first_name: formData.first_name,
-            last_name: formData.last_name,
-            middle_name: formData.middle_name,
-            email: formData.email,
-            phone: formData.phone,
-            linkedin: formData.linkedin,
-            github: formData.github,
-            portfolio: formData.portfolio,
-            professional_summary: formData.professional_summary
-          })
+          .update(cleanedFormData)
           .eq('id', profileId)
+
+        if (error) throw error
       } else {
         const { data, error } = await supabase
           .from('user_profiles')
           .insert({
             user_id: user.id,
-            first_name: formData.first_name,
-            last_name: formData.last_name,
-            middle_name: formData.middle_name,
-            email: formData.email,
-            phone: formData.phone,
-            linkedin: formData.linkedin,
-            github: formData.github,
-            portfolio: formData.portfolio,
-            professional_summary: formData.professional_summary
+            ...cleanedFormData
           })
           .select()
           .single()
@@ -161,7 +158,7 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
         profileId = data.id
       }
 
-      // Save experiences
+      // Save experiences - clean and validate
       if (experiences.length > 0) {
         if (profileData?.experiences?.length > 0) {
           await supabase
@@ -169,16 +166,28 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             .delete()
             .eq('user_profile_id', profileId)
         }
-        await supabase
-          .from('experiences')
-          .insert(experiences.map((exp, idx) => ({
+        const cleanedExperiences = experiences
+          .filter(exp => exp.job_title && exp.company) // Only save valid experiences
+          .map((exp, idx) => ({
             user_profile_id: profileId,
-            ...exp,
-            order_index: idx
-          })))
+            job_title: (exp.job_title || '').trim(),
+            company: (exp.company || '').trim(),
+            start_date: (exp.start_date || '').trim(),
+            end_date: (exp.end_date || '').trim() || null,
+            bullets: Array.isArray(exp.bullets) ? exp.bullets.filter((b: any) => b && typeof b === 'string' && b.trim()) : []
+          }))
+        
+        if (cleanedExperiences.length > 0) {
+          await supabase
+            .from('experiences')
+            .insert(cleanedExperiences.map((exp, idx) => ({
+              ...exp,
+              order_index: idx
+            })))
+        }
       }
 
-      // Save education
+      // Save education - clean and validate
       if (education.length > 0) {
         if (profileData?.education?.length > 0) {
           await supabase
@@ -186,16 +195,25 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             .delete()
             .eq('user_profile_id', profileId)
         }
-        await supabase
-          .from('education')
-          .insert(education.map((edu, idx) => ({
+        const cleanedEducation = education
+          .filter(edu => edu.degree && edu.university) // Only save valid education
+          .map((edu, idx) => ({
             user_profile_id: profileId,
-            ...edu,
+            degree: (edu.degree || '').trim(),
+            university: (edu.university || '').trim(),
+            years: (edu.years || '').trim() || null,
+            location: (edu.location || '').trim() || null,
             order_index: idx
-          })))
+          }))
+        
+        if (cleanedEducation.length > 0) {
+          await supabase
+            .from('education')
+            .insert(cleanedEducation)
+        }
       }
 
-      // Save skills
+      // Save skills - clean and validate
       if (skills.length > 0) {
         if (profileData?.skills?.length > 0) {
           await supabase
@@ -203,16 +221,23 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             .delete()
             .eq('user_profile_id', profileId)
         }
-        await supabase
-          .from('skills')
-          .insert(skills.map((skill, idx) => ({
+        const cleanedSkills = skills
+          .filter(skill => skill.skill_name && skill.skill_name.trim()) // Only save valid skills
+          .map((skill, idx) => ({
             user_profile_id: profileId,
-            ...skill,
+            category: skill.category || 'others',
+            skill_name: (skill.skill_name || '').trim(),
             order_index: idx
-          })))
+          }))
+        
+        if (cleanedSkills.length > 0) {
+          await supabase
+            .from('skills')
+            .insert(cleanedSkills)
+        }
       }
 
-      // Save projects
+      // Save projects - clean and validate
       if (projects.length > 0) {
         if (profileData?.projects?.length > 0) {
           await supabase
@@ -220,16 +245,25 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             .delete()
             .eq('user_profile_id', profileId)
         }
-        await supabase
-          .from('projects')
-          .insert(projects.map((proj, idx) => ({
+        const cleanedProjects = projects
+          .filter(proj => proj.title && proj.title.trim()) // Only save valid projects
+          .map((proj, idx) => ({
             user_profile_id: profileId,
-            ...proj,
+            title: (proj.title || '').trim(),
+            description: (proj.description || '').trim() || null,
+            contribution: (proj.contribution || '').trim() || null,
+            tech_stack: (proj.tech_stack || '').trim() || null,
             order_index: idx
-          })))
+          }))
+        
+        if (cleanedProjects.length > 0) {
+          await supabase
+            .from('projects')
+            .insert(cleanedProjects)
+        }
       }
 
-      // Save achievements
+      // Save achievements - clean and validate
       if (achievements.length > 0) {
         if (profileData?.achievements?.length > 0) {
           await supabase
@@ -237,16 +271,23 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             .delete()
             .eq('user_profile_id', profileId)
         }
-        await supabase
-          .from('achievements')
-          .insert(achievements.map((ach, idx) => ({
+        const cleanedAchievements = achievements
+          .map(ach => typeof ach === 'string' ? ach.trim() : (ach?.achievement_text || '').trim())
+          .filter(ach => ach.length > 0) // Only save non-empty achievements
+          .map((ach, idx) => ({
             user_profile_id: profileId,
-            achievement_text: ach.achievement_text || ach,
+            achievement_text: ach,
             order_index: idx
-          })))
+          }))
+        
+        if (cleanedAchievements.length > 0) {
+          await supabase
+            .from('achievements')
+            .insert(cleanedAchievements)
+        }
       }
 
-      // Save certifications
+      // Save certifications - clean and validate
       if (certifications.length > 0) {
         if (profileData?.certifications?.length > 0) {
           await supabase
@@ -254,13 +295,20 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             .delete()
             .eq('user_profile_id', profileId)
         }
-        await supabase
-          .from('certifications')
-          .insert(certifications.map((cert, idx) => ({
+        const cleanedCertifications = certifications
+          .map(cert => typeof cert === 'string' ? cert.trim() : (cert?.certification_name || '').trim())
+          .filter(cert => cert.length > 0) // Only save non-empty certifications
+          .map((cert, idx) => ({
             user_profile_id: profileId,
-            certification_name: cert.certification_name || cert,
+            certification_name: cert,
             order_index: idx
-          })))
+          }))
+        
+        if (cleanedCertifications.length > 0) {
+          await supabase
+            .from('certifications')
+            .insert(cleanedCertifications)
+        }
       }
 
       onSave()
@@ -272,7 +320,8 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
     } catch (error: any) {
       console.error('Error saving resume:', error)
       if (!silent) {
-        setSaveMessage('error:' + error.message)
+        const errorMessage = error?.message || 'Failed to save. Please try again.'
+        setSaveMessage('error:' + errorMessage)
         setTimeout(() => setSaveMessage(''), 5000)
       }
     } finally {
@@ -741,9 +790,10 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                 <input
                   type="text"
                   value={formData.first_name}
-                  onChange={(e) => updateFormData('first_name', e.target.value)}
+                  onChange={(e) => updateFormData('first_name', e.target.value.trim().substring(0, 50))}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
                   placeholder="John"
+                  maxLength={50}
                 />
               </div>
               <div className="space-y-1">
@@ -751,9 +801,10 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                 <input
                   type="text"
                   value={formData.middle_name}
-                  onChange={(e) => updateFormData('middle_name', e.target.value)}
+                  onChange={(e) => updateFormData('middle_name', e.target.value.trim().substring(0, 50))}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
                   placeholder="Michael (optional)"
+                  maxLength={50}
                 />
               </div>
               <div className="space-y-1">
@@ -761,9 +812,10 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                 <input
                   type="text"
                   value={formData.last_name}
-                  onChange={(e) => updateFormData('last_name', e.target.value)}
+                  onChange={(e) => updateFormData('last_name', e.target.value.trim().substring(0, 50))}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
                   placeholder="Doe"
+                  maxLength={50}
                 />
               </div>
               <div className="space-y-1">
@@ -771,9 +823,10 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                 <input
                   type="email"
                   value={formData.email}
-                  onChange={(e) => updateFormData('email', e.target.value)}
+                  onChange={(e) => updateFormData('email', e.target.value.trim().toLowerCase().substring(0, 100))}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
                   placeholder="john@example.com"
+                  maxLength={100}
                 />
               </div>
               <div className="space-y-1">
@@ -781,39 +834,73 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                 <input
                   type="tel"
                   value={formData.phone}
-                  onChange={(e) => updateFormData('phone', e.target.value)}
+                  onChange={(e) => {
+                    // Allow only numbers, spaces, +, -, (, )
+                    const value = e.target.value.replace(/[^\d\s\+\-\(\)]/g, '').substring(0, 20)
+                    updateFormData('phone', value)
+                  }}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
                   placeholder="+1 234 567 8900"
+                  maxLength={20}
                 />
               </div>
               <div className="space-y-1">
                 <label className="block text-sm font-medium text-gray-700">LinkedIn</label>
                 <input
-                  type="url"
+                  type="text"
                   value={formData.linkedin}
-                  onChange={(e) => updateFormData('linkedin', e.target.value)}
+                  onChange={(e) => {
+                    let value = e.target.value.trim()
+                    // Auto-format URL if user doesn't include protocol
+                    if (value && !value.startsWith('http://') && !value.startsWith('https://') && !value.startsWith('linkedin.com')) {
+                      if (value.includes('.')) {
+                        value = value.startsWith('www.') ? `https://${value}` : `https://www.${value}`
+                      } else {
+                        value = `https://linkedin.com/in/${value.replace(/^\/+|\/+$/g, '')}`
+                      }
+                    }
+                    updateFormData('linkedin', value)
+                  }}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
-                  placeholder="linkedin.com/in/johndoe"
+                  placeholder="linkedin.com/in/johndoe or just johndoe"
                 />
               </div>
               <div className="space-y-1">
                 <label className="block text-sm font-medium text-gray-700">GitHub</label>
                 <input
-                  type="url"
+                  type="text"
                   value={formData.github}
-                  onChange={(e) => updateFormData('github', e.target.value)}
+                  onChange={(e) => {
+                    let value = e.target.value.trim()
+                    // Auto-format URL if user doesn't include protocol
+                    if (value && !value.startsWith('http://') && !value.startsWith('https://') && !value.startsWith('github.com')) {
+                      if (value.includes('.')) {
+                        value = value.startsWith('www.') ? `https://${value}` : `https://www.${value}`
+                      } else {
+                        value = `https://github.com/${value.replace(/^\/+|\/+$/g, '')}`
+                      }
+                    }
+                    updateFormData('github', value)
+                  }}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
-                  placeholder="github.com/johndoe"
+                  placeholder="github.com/johndoe or just johndoe"
                 />
               </div>
               <div className="space-y-1">
                 <label className="block text-sm font-medium text-gray-700">Portfolio</label>
                 <input
-                  type="url"
+                  type="text"
                   value={formData.portfolio}
-                  onChange={(e) => updateFormData('portfolio', e.target.value)}
+                  onChange={(e) => {
+                    let value = e.target.value.trim()
+                    // Auto-format URL if user doesn't include protocol
+                    if (value && !value.startsWith('http://') && !value.startsWith('https://')) {
+                      value = `https://${value.replace(/^\/+|\/+$/g, '')}`
+                    }
+                    updateFormData('portfolio', value)
+                  }}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
-                  placeholder="johndoe.com"
+                  placeholder="johndoe.com or www.johndoe.com"
                 />
               </div>
             </div>
@@ -859,9 +946,9 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             </div>
 
             {showTips.summary && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-semibold text-blue-900 mb-2">💡 Tips for Professional Summary</h4>
-                <ul className="space-y-1 text-sm text-blue-800">
+              <div className="bg-blue-50/80 border border-blue-200/50 rounded-lg p-3.5 mb-4">
+                <h4 className="font-semibold text-blue-900 mb-1.5 text-sm">💡 Tips</h4>
+                <ul className="space-y-1 text-xs text-blue-800">
                   {sectionTips.summary.map((tip, idx) => (
                     <li key={idx}>• {tip}</li>
                   ))}
@@ -889,13 +976,23 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
               <>
                 <textarea
                   value={formData.professional_summary}
-                  onChange={(e) => updateFormData('professional_summary', e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    // Limit to reasonable length
+                    if (value.length <= 1000) {
+                      updateFormData('professional_summary', value)
+                    }
+                  }}
                   rows={8}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all resize-none"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all resize-none text-sm"
                   placeholder="Experienced software engineer with 5+ years of expertise in full-stack development..."
+                  maxLength={1000}
                 />
-                <div className="text-xs text-gray-500">
-                  {formData.professional_summary.length} characters
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-gray-500">{formData.professional_summary.length} / 1000 characters</span>
+                  {formData.professional_summary.length > 800 && (
+                    <span className="text-orange-600">Consider shortening for better readability</span>
+                  )}
                 </div>
               </>
             )}
@@ -931,9 +1028,9 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             </div>
 
             {showTips.experience && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-semibold text-blue-900 mb-2">💡 Tips for Work Experience</h4>
-                <ul className="space-y-1 text-sm text-blue-800">
+              <div className="bg-blue-50/80 border border-blue-200/50 rounded-lg p-3.5 mb-4">
+                <h4 className="font-semibold text-blue-900 mb-1.5 text-sm">💡 Tips</h4>
+                <ul className="space-y-1 text-xs text-blue-800">
                   {sectionTips.experience.map((tip, idx) => (
                     <li key={idx}>• {tip}</li>
                   ))}
@@ -988,8 +1085,9 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                           newExp[idx] = { ...newExp[idx], job_title: e.target.value }
                           setExperiences(newExp)
                         }}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
                         placeholder="Software Engineer"
+                        maxLength={100}
                       />
                     </div>
                     <div>
@@ -999,11 +1097,12 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                         value={exp.company || ''}
                         onChange={(e) => {
                           const newExp = [...experiences]
-                          newExp[idx] = { ...newExp[idx], company: e.target.value }
+                          newExp[idx] = { ...newExp[idx], company: e.target.value.trim().substring(0, 100) }
                           setExperiences(newExp)
                         }}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
                         placeholder="Tech Corp"
+                        maxLength={100}
                       />
                     </div>
                     <div>
@@ -1016,9 +1115,9 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                           newExp[idx] = { ...newExp[idx], start_date: e.target.value }
                           setExperiences(newExp)
                         }}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                        placeholder="Jan 2020"
-                      />
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
+                      placeholder="Jan 2020 or 2020-01"
+                    />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
@@ -1027,36 +1126,43 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                         value={exp.end_date || ''}
                         onChange={(e) => {
                           const newExp = [...experiences]
-                          newExp[idx] = { ...newExp[idx], end_date: e.target.value }
+                          newExp[idx] = { ...newExp[idx], end_date: e.target.value.trim() }
                           setExperiences(newExp)
                         }}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                        placeholder="Present or Dec 2023"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
+                        placeholder="Present, Dec 2023, or 2023-12"
                       />
+                      <p className="text-xs text-gray-500 mt-1">Leave empty or enter "Present" for current role</p>
                     </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Achievements & Responsibilities (one per line)</label>
                     <textarea
-                      value={Array.isArray(exp.bullets) ? exp.bullets.join('\n') : exp.bullets || ''}
+                      value={Array.isArray(exp.bullets) ? exp.bullets.join('\n') : (typeof exp.bullets === 'string' ? exp.bullets : '')}
                       onChange={(e) => {
                         const newExp = [...experiences]
-                        newExp[idx] = { ...newExp[idx], bullets: e.target.value.split('\n').filter(b => b.trim()) }
+                        const bullets = e.target.value.split('\n')
+                          .map(b => b.trim())
+                          .filter(b => b.length > 0)
+                        newExp[idx] = { ...newExp[idx], bullets: bullets.length > 0 ? bullets : [] }
                         setExperiences(newExp)
                       }}
                       rows={4}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent resize-none"
-                      placeholder="• Developed and maintained web applications&#10;• Led a team of 5 developers"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all resize-none text-sm"
+                      placeholder="Developed and maintained web applications&#10;Led a team of 5 developers"
                     />
+                    <p className="text-xs text-gray-500 mt-1">Enter each achievement or responsibility on a new line</p>
                   </div>
                 </div>
               ))}
-              <button
-                onClick={() => setExperiences([...experiences, { job_title: '', company: '', start_date: '', end_date: '', bullets: [] }])}
-                className="w-full py-2.5 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-900 hover:text-gray-900 hover:bg-gray-50 transition-all font-medium text-sm"
-              >
-                + Add Experience
-              </button>
+              {experiences.length > 0 && (
+                <button
+                  onClick={() => setExperiences([...experiences, { job_title: '', company: '', start_date: '', end_date: '', bullets: [] }])}
+                  className="w-full py-2.5 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-900 hover:text-gray-900 hover:bg-gray-50 transition-all font-medium text-sm"
+                >
+                  + Add Another Experience
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -1090,9 +1196,9 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             </div>
 
             {showTips.education && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-semibold text-blue-900 mb-2">💡 Tips for Education</h4>
-                <ul className="space-y-1 text-sm text-blue-800">
+              <div className="bg-blue-50/80 border border-blue-200/50 rounded-lg p-3.5 mb-4">
+                <h4 className="font-semibold text-blue-900 mb-1.5 text-sm">💡 Tips</h4>
+                <ul className="space-y-1 text-xs text-blue-800">
                   {sectionTips.education.map((tip, idx) => (
                     <li key={idx}>• {tip}</li>
                   ))}
@@ -1134,11 +1240,12 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                         value={edu.degree || ''}
                         onChange={(e) => {
                           const newEdu = [...education]
-                          newEdu[idx] = { ...newEdu[idx], degree: e.target.value }
+                          newEdu[idx] = { ...newEdu[idx], degree: e.target.value.trim().substring(0, 100) }
                           setEducation(newEdu)
                         }}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
                         placeholder="B.S. Computer Science"
+                        maxLength={100}
                       />
                     </div>
                     <div>
@@ -1148,11 +1255,12 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                         value={edu.university || ''}
                         onChange={(e) => {
                           const newEdu = [...education]
-                          newEdu[idx] = { ...newEdu[idx], university: e.target.value }
+                          newEdu[idx] = { ...newEdu[idx], university: e.target.value.trim().substring(0, 150) }
                           setEducation(newEdu)
                         }}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
                         placeholder="University Name"
+                        maxLength={150}
                       />
                     </div>
                     <div>
@@ -1162,11 +1270,11 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                         value={edu.years || ''}
                         onChange={(e) => {
                           const newEdu = [...education]
-                          newEdu[idx] = { ...newEdu[idx], years: e.target.value }
+                          newEdu[idx] = { ...newEdu[idx], years: e.target.value.trim() }
                           setEducation(newEdu)
                         }}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                        placeholder="2020 - 2024"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
+                        placeholder="2020 - 2024 or 2020-2024"
                       />
                     </div>
                     <div>
@@ -1176,22 +1284,24 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                         value={edu.location || ''}
                         onChange={(e) => {
                           const newEdu = [...education]
-                          newEdu[idx] = { ...newEdu[idx], location: e.target.value }
+                          newEdu[idx] = { ...newEdu[idx], location: e.target.value.trim() }
                           setEducation(newEdu)
                         }}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
                         placeholder="City, Country"
                       />
                     </div>
                   </div>
                 </div>
               ))}
-              <button
-                onClick={() => setEducation([...education, { degree: '', university: '', years: '', location: '' }])}
-                className="w-full py-2.5 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-900 hover:text-gray-900 hover:bg-gray-50 transition-all font-medium text-sm"
-              >
-                + Add Education
-              </button>
+              {education.length > 0 && (
+                <button
+                  onClick={() => setEducation([...education, { degree: '', university: '', years: '', location: '' }])}
+                  className="w-full py-2.5 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-900 hover:text-gray-900 hover:bg-gray-50 transition-all font-medium text-sm"
+                >
+                  + Add Another Education
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -1225,9 +1335,9 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             </div>
 
             {showTips.skills && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-semibold text-blue-900 mb-2">💡 Tips for Skills</h4>
-                <ul className="space-y-1 text-sm text-blue-800">
+              <div className="bg-blue-50/80 border border-blue-200/50 rounded-lg p-3.5 mb-4">
+                <h4 className="font-semibold text-blue-900 mb-1.5 text-sm">💡 Tips</h4>
+                <ul className="space-y-1 text-xs text-blue-800">
                   {sectionTips.skills.map((tip, idx) => (
                     <li key={idx}>• {tip}</li>
                   ))}
@@ -1253,30 +1363,42 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                     </label>
                     <input
                       type="text"
-                      value={categorySkills.map(s => s.skill_name).join(', ')}
+                      value={categorySkills.map(s => s.skill_name || '').filter(Boolean).join(', ')}
                       onChange={(e) => {
                         const inputValue = e.target.value
-                        const skillNames = inputValue.split(',').map(s => s.trim()).filter(s => s.length > 0)
+                        // Split by comma and clean up
+                        const skillNames = inputValue
+                          .split(',')
+                          .map(s => s.trim())
+                          .filter(s => s.length > 0 && s.length <= 50) // Max 50 chars per skill
                         const otherSkills = skills.filter(s => s.category !== category)
-                        const newSkills = skillNames.length > 0 
-                          ? skillNames.map(name => ({ category, skill_name: name }))
-                          : []
+                        const newSkills = skillNames.map(name => ({ 
+                          category, 
+                          skill_name: name.substring(0, 50) // Ensure max length
+                        }))
                         setSkills([...otherSkills, ...newSkills])
                       }}
                       onBlur={(e) => {
-                        // Ensure skills are saved even if input ends with comma
-                        const inputValue = e.target.value
-                        const skillNames = inputValue.split(',').map(s => s.trim()).filter(s => s.length > 0)
+                        // Ensure skills are saved even if input ends with comma or has extra spaces
+                        const inputValue = e.target.value.trim()
+                        const skillNames = inputValue
+                          .split(',')
+                          .map(s => s.trim())
+                          .filter(s => s.length > 0 && s.length <= 50)
                         const otherSkills = skills.filter(s => s.category !== category)
-                        const newSkills = skillNames.length > 0 
-                          ? skillNames.map(name => ({ category, skill_name: name }))
-                          : []
+                        const newSkills = skillNames.map(name => ({ 
+                          category, 
+                          skill_name: name.substring(0, 50)
+                        }))
                         setSkills([...otherSkills, ...newSkills])
                       }}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
                       placeholder="Enter skills separated by commas (e.g., Python, JavaScript, React)"
+                      maxLength={500}
                     />
-                    <p className="text-xs text-gray-500 mt-1">Separate multiple skills with commas</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Separate multiple skills with commas • {categorySkills.length} skill{categorySkills.length !== 1 ? 's' : ''} added
+                    </p>
                   </div>
                 )
               })}
@@ -1313,9 +1435,9 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             </div>
 
             {showTips.projects && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-semibold text-blue-900 mb-2">💡 Tips for Projects</h4>
-                <ul className="space-y-1 text-sm text-blue-800">
+              <div className="bg-blue-50/80 border border-blue-200/50 rounded-lg p-3.5 mb-4">
+                <h4 className="font-semibold text-blue-900 mb-1.5 text-sm">💡 Tips</h4>
+                <ul className="space-y-1 text-xs text-blue-800">
                   {sectionTips.projects.map((tip, idx) => (
                     <li key={idx}>• {tip}</li>
                   ))}
@@ -1365,54 +1487,60 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                       value={proj.title || ''}
                       onChange={(e) => {
                         const newProj = [...projects]
-                        newProj[idx] = { ...newProj[idx], title: e.target.value }
+                        newProj[idx] = { ...newProj[idx], title: e.target.value.trim().substring(0, 150) }
                         setProjects(newProj)
                       }}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
                       placeholder="Project Title *"
+                      maxLength={150}
                     />
                     <textarea
                       value={proj.description || ''}
                       onChange={(e) => {
                         const newProj = [...projects]
-                        newProj[idx] = { ...newProj[idx], description: e.target.value }
+                        newProj[idx] = { ...newProj[idx], description: e.target.value.substring(0, 500) }
                         setProjects(newProj)
                       }}
                       rows={3}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent resize-none"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all resize-none text-sm"
                       placeholder="Project description and key features..."
+                      maxLength={500}
                     />
                     <textarea
                       value={proj.contribution || ''}
                       onChange={(e) => {
                         const newProj = [...projects]
-                        newProj[idx] = { ...newProj[idx], contribution: e.target.value }
+                        newProj[idx] = { ...newProj[idx], contribution: e.target.value.substring(0, 300) }
                         setProjects(newProj)
                       }}
                       rows={2}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent resize-none"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all resize-none text-sm"
                       placeholder="Your key contributions (optional)"
+                      maxLength={300}
                     />
                     <input
                       type="text"
                       value={proj.tech_stack || ''}
                       onChange={(e) => {
                         const newProj = [...projects]
-                        newProj[idx] = { ...newProj[idx], tech_stack: e.target.value }
+                        newProj[idx] = { ...newProj[idx], tech_stack: e.target.value.trim().substring(0, 200) }
                         setProjects(newProj)
                       }}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
                       placeholder="Technologies used (e.g., React, Node.js, MongoDB)"
+                      maxLength={200}
                     />
                   </div>
                 </div>
               ))}
-              <button
-                onClick={() => setProjects([...projects, { title: '', description: '', contribution: '', tech_stack: '' }])}
-                className="w-full py-2.5 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-900 hover:text-gray-900 hover:bg-gray-50 transition-all font-medium text-sm"
-              >
-                + Add Project
-              </button>
+              {projects.length > 0 && (
+                <button
+                  onClick={() => setProjects([...projects, { title: '', description: '', contribution: '', tech_stack: '' }])}
+                  className="w-full py-2.5 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-900 hover:text-gray-900 hover:bg-gray-50 transition-all font-medium text-sm"
+                >
+                  + Add Another Project
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -1446,9 +1574,9 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             </div>
 
             {showTips.achievements && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-semibold text-blue-900 mb-2">💡 Tips for Achievements</h4>
-                <ul className="space-y-1 text-sm text-blue-800">
+              <div className="bg-blue-50/80 border border-blue-200/50 rounded-lg p-3.5 mb-4">
+                <h4 className="font-semibold text-blue-900 mb-1.5 text-sm">💡 Tips</h4>
+                <ul className="space-y-1 text-xs text-blue-800">
                   {sectionTips.achievements.map((tip, idx) => (
                     <li key={idx}>• {tip}</li>
                   ))}
@@ -1471,29 +1599,41 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             )}
             
             <div className="space-y-3">
-              {achievements.map((ach, idx) => (
-                <div key={idx} className="flex gap-3 items-start">
-                  <input
-                    type="text"
-                    value={ach.achievement_text || ach || ''}
-                    onChange={(e) => {
-                      const newAch = [...achievements]
-                      newAch[idx] = typeof ach === 'string' ? e.target.value : { ...ach, achievement_text: e.target.value }
-                      setAchievements(newAch)
-                    }}
-                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                    placeholder="e.g., Led team that increased revenue by 40%"
-                  />
-                  <button
-                    onClick={() => setAchievements(achievements.filter((_, i) => i !== idx))}
-                    className="px-4 py-2.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
+              {achievements.map((ach, idx) => {
+                // Normalize achievement value
+                const achievementValue = typeof ach === 'string' ? ach : (ach?.achievement_text || '')
+                return (
+                  <div key={idx} className="flex gap-3 items-start">
+                    <input
+                      type="text"
+                      value={achievementValue}
+                      onChange={(e) => {
+                        const newAch = [...achievements]
+                        const value = e.target.value.trim().substring(0, 200)
+                        newAch[idx] = typeof ach === 'string' ? value : { achievement_text: value }
+                        setAchievements(newAch)
+                      }}
+                      className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
+                      placeholder="e.g., Led team that increased revenue by 40%"
+                      maxLength={200}
+                    />
+                    <button
+                      onClick={() => setAchievements(achievements.filter((_, i) => i !== idx))}
+                      className="px-4 py-2.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium whitespace-nowrap"
+                      title="Remove achievement"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )
+              })}
               <button
-                onClick={() => setAchievements([...achievements, ''])}
+                onClick={() => {
+                  // Only add if last achievement is not empty
+                  if (achievements.length === 0 || (typeof achievements[achievements.length - 1] === 'string' ? achievements[achievements.length - 1].trim() : achievements[achievements.length - 1]?.achievement_text?.trim())) {
+                    setAchievements([...achievements, ''])
+                  }
+                }}
                 className="w-full py-2.5 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-900 hover:text-gray-900 hover:bg-gray-50 transition-all font-medium text-sm"
               >
                 + Add Achievement
@@ -1531,9 +1671,9 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             </div>
 
             {showTips.certifications && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-semibold text-blue-900 mb-2">💡 Tips for Certifications</h4>
-                <ul className="space-y-1 text-sm text-blue-800">
+              <div className="bg-blue-50/80 border border-blue-200/50 rounded-lg p-3.5 mb-4">
+                <h4 className="font-semibold text-blue-900 mb-1.5 text-sm">💡 Tips</h4>
+                <ul className="space-y-1 text-xs text-blue-800">
                   {sectionTips.certifications.map((tip, idx) => (
                     <li key={idx}>• {tip}</li>
                   ))}
@@ -1556,29 +1696,41 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             )}
             
             <div className="space-y-3">
-              {certifications.map((cert, idx) => (
-                <div key={idx} className="flex gap-3 items-start">
-                  <input
-                    type="text"
-                    value={cert.certification_name || cert || ''}
-                    onChange={(e) => {
-                      const newCert = [...certifications]
-                      newCert[idx] = typeof cert === 'string' ? e.target.value : { ...cert, certification_name: e.target.value }
-                      setCertifications(newCert)
-                    }}
-                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                    placeholder="e.g., AWS Certified Solutions Architect"
-                  />
-                  <button
-                    onClick={() => setCertifications(certifications.filter((_, i) => i !== idx))}
-                    className="px-4 py-2.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
+              {certifications.map((cert, idx) => {
+                // Normalize certification value
+                const certValue = typeof cert === 'string' ? cert : (cert?.certification_name || '')
+                return (
+                  <div key={idx} className="flex gap-3 items-start">
+                    <input
+                      type="text"
+                      value={certValue}
+                      onChange={(e) => {
+                        const newCert = [...certifications]
+                        const value = e.target.value.trim().substring(0, 200)
+                        newCert[idx] = typeof cert === 'string' ? value : { certification_name: value }
+                        setCertifications(newCert)
+                      }}
+                      className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
+                      placeholder="e.g., AWS Certified Solutions Architect"
+                      maxLength={200}
+                    />
+                    <button
+                      onClick={() => setCertifications(certifications.filter((_, i) => i !== idx))}
+                      className="px-4 py-2.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium whitespace-nowrap"
+                      title="Remove certification"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )
+              })}
               <button
-                onClick={() => setCertifications([...certifications, ''])}
+                onClick={() => {
+                  // Only add if last certification is not empty
+                  if (certifications.length === 0 || (typeof certifications[certifications.length - 1] === 'string' ? certifications[certifications.length - 1].trim() : certifications[certifications.length - 1]?.certification_name?.trim())) {
+                    setCertifications([...certifications, ''])
+                  }
+                }}
                 className="w-full py-2.5 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-900 hover:text-gray-900 hover:bg-gray-50 transition-all font-medium text-sm"
               >
                 + Add Certification
