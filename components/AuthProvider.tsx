@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         setLoading(false)
       })
-      .catch((error) => {
+      .catch((error: any) => {
         if (!mounted) return
         console.error('[AuthProvider] Unexpected error getting session:', error)
         setSession(null)
