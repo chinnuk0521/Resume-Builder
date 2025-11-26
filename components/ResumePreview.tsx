@@ -364,47 +364,47 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-      <div className="bg-gray-900 px-6 py-4">
-        <div className="flex justify-between items-center">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-gradient-to-r from-gray-900 to-gray-800 px-4 sm:px-6 py-3">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
           <div>
-            <h2 className="text-xl font-bold text-white tracking-tight">Resume Preview</h2>
-            <p className="text-gray-300 text-sm mt-0.5">A4 Format - Live preview as you type</p>
+            <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">Resume Preview</h2>
+            <p className="text-gray-300 text-xs mt-0.5">A4 Format - Live preview as you type</p>
           </div>
           {resumeText && !resumeText.includes('Start building') && (
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <button
                 onClick={handlePreview}
                 disabled={isGenerating}
-                className="flex items-center gap-2 px-3 py-2 bg-white text-gray-900 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition-all shadow-md hover:shadow-lg"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium transition-all"
                 title="Preview PDF"
               >
-                <HiOutlineEye className="w-4 h-4" />
+                <HiOutlineEye className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">{isGenerating ? 'Generating...' : 'Preview'}</span>
               </button>
               <button
                 onClick={handlePrintPreview}
-                className="flex items-center gap-2 px-3 py-2 bg-white text-gray-900 rounded-lg hover:bg-gray-100 text-sm font-semibold transition-all shadow-md hover:shadow-lg"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-medium transition-all"
                 title="Print Preview"
               >
-                <HiOutlinePrinter className="w-4 h-4" />
+                <HiOutlinePrinter className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Print</span>
               </button>
               <button
                 onClick={handleDownload}
                 disabled={isGenerating}
-                className="flex items-center gap-2 px-3 py-2 bg-white text-gray-900 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition-all shadow-md hover:shadow-lg"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white text-gray-900 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold transition-all"
                 title="Download PDF"
               >
-                <HiOutlineArrowDownTray className="w-4 h-4" />
+                <HiOutlineArrowDownTray className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">{isGenerating ? 'Generating...' : 'PDF'}</span>
               </button>
               <button
                 onClick={handleExportWord}
-                className="flex items-center gap-2 px-3 py-2 bg-white text-gray-900 rounded-lg hover:bg-gray-100 text-sm font-semibold transition-all shadow-md hover:shadow-lg"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-medium transition-all"
                 title="Export as Word"
               >
-                <HiOutlineDocumentArrowDown className="w-4 h-4" />
+                <HiOutlineDocumentArrowDown className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Word</span>
               </button>
             </div>
