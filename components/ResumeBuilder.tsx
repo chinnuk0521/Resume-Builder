@@ -355,12 +355,13 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
 
   // Get resume stats
   const getResumeStats = () => {
-    const totalWords = [
+    const allText = [
       formData.professional_summary,
       ...experiences.flatMap(exp => exp.bullets || []),
-      ...projects.map(proj => `${proj.description || ''} ${proj.contribution || ''}`).join(' '),
-      ...achievements.map(ach => ach.achievement_text || ach || '').join(' ')
-    ].join(' ').split(/\s+/).filter(w => w.length > 0).length
+      ...projects.map(proj => `${proj.description || ''} ${proj.contribution || ''}`),
+      ...achievements.map(ach => ach.achievement_text || ach || '')
+    ].join(' ').split(/\s+/).filter(w => w.length > 0)
+    const totalWords = allText.length
 
     const totalExperience = experiences.length
     const totalSkills = skills.length
