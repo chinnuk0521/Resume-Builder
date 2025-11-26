@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Get initial session with error handling
     supabase.auth.getSession()
-      .then(({ data, error }) => {
+      .then(({ data, error }: { data: { session: Session | null }, error: any }) => {
         if (!mounted) return
         
         if (error) {

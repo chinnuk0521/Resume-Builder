@@ -16,7 +16,7 @@ import {
   HiXCircle,
   HiOutlineInformationCircle,
   HiOutlineClipboard,
-  HiOutlineDuplicate,
+  HiOutlineSquare2Stack,
   HiOutlineTrash,
   HiOutlineSparkles,
   HiOutlineArrowDownTray
@@ -967,7 +967,7 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                         className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition-colors"
                         title="Duplicate this experience"
                       >
-                        <HiOutlineDuplicate className="w-4 h-4" />
+                        <HiOutlineSquare2Stack className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => setExperiences(experiences.filter((_, i) => i !== idx))}
@@ -1349,7 +1349,7 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                         className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition-colors"
                         title="Duplicate this project"
                       >
-                        <HiOutlineDuplicate className="w-4 h-4" />
+                        <HiOutlineSquare2Stack className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => setProjects(projects.filter((_, i) => i !== idx))}
