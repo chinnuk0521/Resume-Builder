@@ -56,6 +56,13 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
   const [projects, setProjects] = useState<any[]>([])
   const [achievements, setAchievements] = useState<any[]>([])
   const [certifications, setCertifications] = useState<any[]>([])
+  const [skillInputs, setSkillInputs] = useState<{ [key: string]: string }>({
+    programming: '',
+    tools: '',
+    databases: '',
+    cloud: '',
+    others: ''
+  })
 
   useEffect(() => {
     if (profileData) {
@@ -1356,49 +1363,85 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             <div className="space-y-5">
               {['programming', 'tools', 'databases', 'cloud', 'others'].map((category) => {
                 const categorySkills = skills.filter(s => s.category === category)
+                
+                const handleAddSkill = (skillName: string) => {
+                  const trimmed = skillName.trim()
+                  if (trimmed.length === 0 || trimmed.length > 50) return
+                  
+                  // Check if skill already exists in this category
+                  const exists = categorySkills.some(s => 
+                    s.skill_name.toLowerCase() === trimmed.toLowerCase()
+                  )
+                  if (exists) {
+                    // Clear input if duplicate
+                    setSkillInputs({ ...skillInputs, [category]: '' })
+                    return
+                  }
+                  
+                  const otherSkills = skills.filter(s => s.category !== category)
+                  const newSkill = { category, skill_name: trimmed }
+                  setSkills([...otherSkills, newSkill])
+                  setSkillInputs({ ...skillInputs, [category]: '' })
+                }
+                
+                const handleRemoveSkill = (skillName: string) => {
+                  const otherSkills = skills.filter(s => 
+                    !(s.category === category && s.skill_name === skillName)
+                  )
+                  setSkills(otherSkills)
+                }
+                
                 return (
-                  <div key={category} className="border border-gray-200 rounded-xl p-5 bg-gray-50">
+                  <div key={category} className="border border-gray-200 rounded-lg p-4 bg-gray-50/50">
                     <label className="block text-sm font-semibold text-gray-800 mb-2 capitalize">
                       {category.replace('_', ' ')}
                     </label>
+                    
+                    {/* Input field */}
                     <input
                       type="text"
-                      value={categorySkills.map(s => s.skill_name || '').filter(Boolean).join(', ')}
+                      value={skillInputs[category] || ''}
                       onChange={(e) => {
-                        const inputValue = e.target.value
-                        // Split by comma and clean up
-                        const skillNames = inputValue
-                          .split(',')
-                          .map(s => s.trim())
-                          .filter(s => s.length > 0 && s.length <= 50) // Max 50 chars per skill
-                        const otherSkills = skills.filter(s => s.category !== category)
-                        const newSkills = skillNames.map(name => ({ 
-                          category, 
-                          skill_name: name.substring(0, 50) // Ensure max length
-                        }))
-                        setSkills([...otherSkills, ...newSkills])
+                        const value = e.target.value
+                        if (value.length <= 50) {
+                          setSkillInputs({ ...skillInputs, [category]: value })
+                        }
                       }}
-                      onBlur={(e) => {
-                        // Ensure skills are saved even if input ends with comma or has extra spaces
-                        const inputValue = e.target.value.trim()
-                        const skillNames = inputValue
-                          .split(',')
-                          .map(s => s.trim())
-                          .filter(s => s.length > 0 && s.length <= 50)
-                        const otherSkills = skills.filter(s => s.category !== category)
-                        const newSkills = skillNames.map(name => ({ 
-                          category, 
-                          skill_name: name.substring(0, 50)
-                        }))
-                        setSkills([...otherSkills, ...newSkills])
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleAddSkill(skillInputs[category] || '')
+                        }
                       }}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
-                      placeholder="Enter skills separated by commas (e.g., Python, JavaScript, React)"
-                      maxLength={500}
+                      placeholder="Type a skill and press Enter to add"
+                      maxLength={50}
                     />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Separate multiple skills with commas • {categorySkills.length} skill{categorySkills.length !== 1 ? 's' : ''} added
+                    <p className="text-xs text-gray-500 mt-1.5 mb-3">
+                      Press Enter to add • {categorySkills.length} skill{categorySkills.length !== 1 ? 's' : ''} added
                     </p>
+                    
+                    {/* Skills display as tags */}
+                    {categorySkills.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {categorySkills.map((skill, idx) => (
+                          <div
+                            key={idx}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium"
+                          >
+                            <span>{skill.skill_name}</span>
+                            <button
+                              onClick={() => handleRemoveSkill(skill.skill_name)}
+                              className="hover:bg-gray-700 rounded-full p-0.5 transition-colors"
+                              title="Remove skill"
+                              type="button"
+                            >
+                              <HiXCircle className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )
               })}

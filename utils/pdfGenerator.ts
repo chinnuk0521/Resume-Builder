@@ -4,8 +4,9 @@ import { PDFDocument, rgb, StandardFonts, PDFName } from 'pdf-lib'
 // A4: 210mm x 297mm = 595.3 x 841.9 points
 const A4_WIDTH = 595.28
 const A4_HEIGHT = 841.89
-const MARGIN = 72 // 25mm = ~1 inch margins on all sides
-const CONTENT_WIDTH = A4_WIDTH - (2 * MARGIN) // 451.28 points
+const MARGIN = 54 // Reduced margins for more space (0.75 inch)
+const CONTENT_WIDTH = A4_WIDTH - (2 * MARGIN) // 487.28 points
+const MIN_BOTTOM_MARGIN = 36 // Minimum space at bottom (0.5 inch)
 
 // Helper function to extract URLs from contact string
 function extractUrls(contactLine: string): { linkedin?: string, github?: string, portfolio?: string } {
@@ -65,14 +66,15 @@ export async function generatePDF(textContent: string) {
     // Parse the text content
     const lines = safeContent.split('\n').map(line => line.trim())
   
-    // Typography settings matching the template
-    const fontSize = 10
-    const lineHeight = 12
-    const sectionHeaderSize = 11
-    const sectionSpacing = 20 // Space before section header
-    const paragraphSpacing = 6 // Space between paragraphs
-    const bulletIndent = 12
-    const minBottomMargin = 72 // Minimum space at bottom before new page
+    // Typography settings - optimized for single page
+    const fontSize = 9 // Reduced from 10
+    const lineHeight = 10.5 // Reduced from 12
+    const sectionHeaderSize = 10 // Reduced from 11
+    const sectionSpacing = 12 // Reduced from 20 - Space before section header
+    const paragraphSpacing = 4 // Reduced from 6 - Space between paragraphs
+    const bulletIndent = 10 // Reduced from 12
+    const nameSize = 20 // Reduced from 25
+    const nameSpacing = 20 // Reduced from 30
 
     // Track context for right-alignment
     let currentSection = ''
@@ -88,12 +90,10 @@ export async function generatePDF(textContent: string) {
         continue
       }
 
-      // Check if we need a new page
-      if (yPosition < MARGIN + minBottomMargin) {
-        const newPage = pdfDoc.addPage([A4_WIDTH, A4_HEIGHT])
-        currentPage = newPage
-        yPosition = A4_HEIGHT - MARGIN
-        annotations.length = 0 // Clear annotations for new page
+      // Check if we're running out of space - truncate content instead of new page
+      if (yPosition < MARGIN + MIN_BOTTOM_MARGIN) {
+        // Stop processing - we've reached the bottom of the page
+        break
       }
 
       // Check if it's the name (first substantial line, all caps, not contact info)
@@ -101,10 +101,9 @@ export async function generatePDF(textContent: string) {
           !line.includes('@') && !line.includes('|') && 
           !line.match(/\d{10,}/) &&
           !line.match(/^(PROFESSIONAL SUMMARY|EXPERIENCE|EDUCATION|SKILLS|ACHIEVEMENTS|PROJECTS|CERTIFICATIONS|LINKS|WORK EXPERIENCE|TECHNICAL SKILLS)$/)) {
-        yPosition -= 4
-        // Center the name with font size 25
+        yPosition -= 2
+        // Center the name
         const nameText = line.toUpperCase()
-        const nameSize = 25
         const nameWidth = boldFont.widthOfTextAtSize(nameText, nameSize)
         const nameX = (A4_WIDTH - nameWidth) / 2 // Center horizontally
         currentPage.drawText(nameText, {
@@ -114,7 +113,7 @@ export async function generatePDF(textContent: string) {
           font: boldFont,
           color: rgb(0, 0, 0),
         })
-        yPosition -= 30 // Increased spacing for larger font
+        yPosition -= nameSpacing
         i++
         continue
       }
@@ -223,7 +222,7 @@ export async function generatePDF(textContent: string) {
           annotations.length = 0 // Clear after adding
         }
         
-        yPosition -= lineHeight + 12 // Increased spacing
+        yPosition -= lineHeight + 8 // Reduced spacing
         i++
         continue
       }
@@ -246,7 +245,7 @@ export async function generatePDF(textContent: string) {
           font: boldFont,
           color: rgb(0, 0, 0),
         })
-        yPosition -= lineHeight + 8
+        yPosition -= lineHeight + 6
         i++
         continue
       }
@@ -327,7 +326,7 @@ export async function generatePDF(textContent: string) {
           })
           i++
         }
-        yPosition -= lineHeight + 2
+        yPosition -= lineHeight + 1
         continue
       }
 
@@ -407,7 +406,7 @@ export async function generatePDF(textContent: string) {
           })
           i++
         }
-        yPosition -= lineHeight + 2
+        yPosition -= lineHeight + 1
         continue
       }
 
@@ -426,14 +425,12 @@ export async function generatePDF(textContent: string) {
             font: boldFont,
             color: rgb(0, 0, 0),
           })
-          yPosition -= lineHeight + 2
+          yPosition -= lineHeight + 1
           
           // Job title on next line - keep waiting flag
           if (parts[1]) {
-            if (yPosition < MARGIN + minBottomMargin) {
-              const newPage = pdfDoc.addPage([A4_WIDTH, A4_HEIGHT])
-              currentPage = newPage
-              yPosition = A4_HEIGHT - MARGIN
+            if (yPosition < MARGIN + MIN_BOTTOM_MARGIN) {
+              break // Stop if out of space
             }
             // Don't reset waitingForDateAfterCompany - dates should still be right-aligned
             currentPage.drawText(parts[1], {
@@ -443,7 +440,7 @@ export async function generatePDF(textContent: string) {
               font: font,
               color: rgb(0, 0, 0),
             })
-            yPosition -= lineHeight + 2
+            yPosition -= lineHeight + 1
           }
         } else {
           // Single part - just draw it
@@ -454,7 +451,7 @@ export async function generatePDF(textContent: string) {
             font: boldFont,
             color: rgb(0, 0, 0),
           })
-          yPosition -= lineHeight + 2
+          yPosition -= lineHeight + 1
         }
         i++
         continue
@@ -487,7 +484,7 @@ export async function generatePDF(textContent: string) {
             color: rgb(0, 0, 0),
           })
           
-          yPosition -= lineHeight + 2
+          yPosition -= lineHeight + 1
           waitingForDateAfterCompany = false
           waitingForDateAfterUniversity = false
           i++
@@ -509,7 +506,7 @@ export async function generatePDF(textContent: string) {
           font: font,
           color: rgb(0, 0, 0),
         })
-        yPosition -= lineHeight + 2
+        yPosition -= lineHeight + 1
         i++
         continue
       }
@@ -543,7 +540,7 @@ export async function generatePDF(textContent: string) {
             color: rgb(0, 0, 0),
           })
         }
-        yPosition -= lineHeight + paragraphSpacing
+        yPosition -= lineHeight + (paragraphSpacing - 1) // Slightly reduced spacing
         i++
         continue
       }
@@ -583,19 +580,8 @@ export async function generatePDF(textContent: string) {
               currentY -= lineHeight
               currentLine = word
               
-              if (currentY < MARGIN + minBottomMargin) {
-                const newPage = pdfDoc.addPage([A4_WIDTH, A4_HEIGHT])
-                currentPage = newPage
-                currentY = A4_HEIGHT - MARGIN
-                xOffset = MARGIN + bulletIndent
-                // Redraw bullet on new page
-                currentPage.drawText('•', {
-                  x: MARGIN,
-                  y: currentY,
-                  size: fontSize,
-                  font: font,
-                  color: rgb(0, 0, 0),
-                })
+              if (currentY < MARGIN + MIN_BOTTOM_MARGIN) {
+                break // Stop if out of space
               }
             } else {
               currentLine = testLine
@@ -673,10 +659,8 @@ export async function generatePDF(textContent: string) {
             currentY -= lineHeight
             currentLineWords = [word]
             
-            if (currentY < MARGIN + minBottomMargin) {
-              const newPage = pdfDoc.addPage([A4_WIDTH, A4_HEIGHT])
-              currentPage = newPage
-              currentY = A4_HEIGHT - MARGIN
+            if (currentY < MARGIN + MIN_BOTTOM_MARGIN) {
+              break // Stop if out of space
             }
           } else {
             currentLineWords.push(word)
