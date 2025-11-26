@@ -4,8 +4,8 @@ import 'react-quill/dist/quill.snow.css'
 import { AuthProvider } from '@/components/AuthProvider'
 
 export const metadata: Metadata = {
-  title: 'Resume Rewriter - ATS Optimizer',
-  description: 'Transform your resume into an ATS-friendly format',
+  title: 'Resume Builder - Professional ATS-Optimized Resumes',
+  description: 'Build professional, ATS-optimized resumes that get you noticed',
 }
 
 export default function RootLayout({
