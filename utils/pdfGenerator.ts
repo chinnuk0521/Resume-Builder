@@ -303,19 +303,24 @@ export async function generatePDF(textContent: string) {
           
           // In Education section: left = school, right = location + dates, next line = course
           if (currentSection === 'EDUCATION') {
-            // Draw school name on left (bold) - start from absolute left margin
+            // Use minimal margin for table rows - left content starts from leftmost edge
+            // Using 18 points (0.25 inch) for maximum edge-to-edge alignment
+            const tableLeftMargin = 18
+            const tableRightMargin = 18
+            
+            // Draw school name on left (bold) - start from absolute leftmost position
             currentPage.drawText(leftCell, {
-              x: MARGIN,
+              x: tableLeftMargin,
               y: yPosition,
               size: fontSize + 1,
               font: boldFont,
               color: rgb(0, 0, 0),
             })
             
-            // Draw location and dates on right - align to absolute right margin
+            // Draw location and dates on right - align to absolute rightmost position
             if (rightCell) {
               const rightWidth = font.widthOfTextAtSize(rightCell, fontSize)
-              const rightX = A4_WIDTH - MARGIN - rightWidth
+              const rightX = A4_WIDTH - tableRightMargin - rightWidth
               currentPage.drawText(rightCell, {
                 x: rightX,
                 y: yPosition,
@@ -333,19 +338,24 @@ export async function generatePDF(textContent: string) {
           
           // In Work Experience section: left = job title, right = location + dates, next line = company
           if (currentSection === 'WORK EXPERIENCE' || currentSection === 'EXPERIENCE') {
-            // Draw job title on left - start from absolute left margin
+            // Use minimal margin for table rows - left content starts from leftmost edge
+            // Using 18 points (0.25 inch) for maximum edge-to-edge alignment
+            const tableLeftMargin = 18
+            const tableRightMargin = 18
+            
+            // Draw job title on left - start from absolute leftmost position
             currentPage.drawText(leftCell, {
-              x: MARGIN,
+              x: tableLeftMargin,
               y: yPosition,
               size: fontSize,
               font: font,
               color: rgb(0, 0, 0),
             })
             
-            // Draw location and dates on right - align to absolute right margin
+            // Draw location and dates on right - align to absolute rightmost position
             if (rightCell) {
               const rightWidth = font.widthOfTextAtSize(rightCell, fontSize)
-              const rightX = A4_WIDTH - MARGIN - rightWidth
+              const rightX = A4_WIDTH - tableRightMargin - rightWidth
               currentPage.drawText(rightCell, {
                 x: rightX,
                 y: yPosition,
@@ -611,9 +621,11 @@ export async function generatePDF(textContent: string) {
           !line.match(/\w+\s+\d{4}\s*[-–—]/) &&
           !line.match(/\d{4}\s*[-–—]/) &&
           !line.includes('|')) {
-        // This is likely a job title or degree - draw it normally
+        // This is likely a job title or degree (or course/company after table row)
+        // Use smaller margin to match table row alignment
+        const tableLeftMargin = 18
         currentPage.drawText(line, {
-          x: MARGIN,
+          x: tableLeftMargin,
           y: yPosition,
           size: fontSize,
           font: font,
