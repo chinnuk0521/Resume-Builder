@@ -1,7 +1,7 @@
 'use client'
 
 import { downloadPDF, previewPDF } from '@/utils/pdfGenerator'
-import { HiOutlineArrowDownTray, HiOutlineEye } from 'react-icons/hi2'
+import { HiOutlineArrowDownTray, HiOutlineEye, HiOutlinePrinter, HiOutlineDocumentArrowDown } from 'react-icons/hi2'
 import { useState } from 'react'
 
 interface ResumePreviewProps {
@@ -231,31 +231,181 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
     }
   }
 
+  const handlePrintPreview = () => {
+    if (!resumeText || resumeText.includes('Start building')) {
+      alert('Please build your resume first')
+      return
+    }
+
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Resume - Print Preview</title>
+          <style>
+            @media print {
+              @page {
+                size: A4;
+                margin: 0.5in;
+              }
+            }
+            body {
+              font-family: 'Times New Roman', serif;
+              font-size: 11pt;
+              line-height: 1.4;
+              max-width: 8.5in;
+              margin: 0 auto;
+              padding: 20px;
+              color: #000;
+            }
+            h1 {
+              font-size: 18pt;
+              font-weight: bold;
+              text-align: center;
+              margin-bottom: 10px;
+              text-transform: uppercase;
+            }
+            .section {
+              margin-top: 15px;
+            }
+            .section-title {
+              font-size: 12pt;
+              font-weight: bold;
+              text-transform: uppercase;
+              margin-top: 15px;
+              margin-bottom: 8px;
+              border-bottom: 1px solid #000;
+            }
+            .contact-info {
+              text-align: center;
+              margin-bottom: 15px;
+              font-size: 10pt;
+            }
+            ul {
+              margin: 5px 0;
+              padding-left: 20px;
+            }
+            li {
+              margin: 3px 0;
+            }
+          </style>
+        </head>
+        <body>
+          <pre style="white-space: pre-wrap; font-family: 'Times New Roman', serif; font-size: 11pt;">${resumeText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+        </body>
+      </html>
+    `)
+    printWindow.document.close()
+    setTimeout(() => {
+      printWindow.print()
+    }, 250)
+  }
+
+  const handleExportWord = () => {
+    if (!resumeText || resumeText.includes('Start building')) {
+      alert('Please build your resume first')
+      return
+    }
+
+    // Create a simple Word document using HTML format
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Resume</title>
+          <style>
+            body {
+              font-family: 'Times New Roman', serif;
+              font-size: 11pt;
+              line-height: 1.4;
+              max-width: 8.5in;
+              margin: 0 auto;
+              padding: 20px;
+            }
+            h1 {
+              font-size: 18pt;
+              font-weight: bold;
+              text-align: center;
+              margin-bottom: 10px;
+              text-transform: uppercase;
+            }
+            .section-title {
+              font-size: 12pt;
+              font-weight: bold;
+              text-transform: uppercase;
+              margin-top: 15px;
+              margin-bottom: 8px;
+            }
+            .contact-info {
+              text-align: center;
+              margin-bottom: 15px;
+            }
+          </style>
+        </head>
+        <body>
+          <pre style="white-space: pre-wrap; font-family: 'Times New Roman', serif;">${resumeText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+        </body>
+      </html>
+    `
+
+    const blob = new Blob([htmlContent], { type: 'application/msword' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'resume.doc'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-      <div className="bg-gradient-to-r from-gray-700 to-gray-800 px-6 py-4">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-gray-900 px-6 py-4">
         <div className="flex justify-between items-center">
           <div>
-            <h2 className="text-xl font-bold text-white">Resume Preview</h2>
+            <h2 className="text-xl font-bold text-white tracking-tight">Resume Preview</h2>
             <p className="text-gray-300 text-sm mt-0.5">A4 Format - Live preview as you type</p>
           </div>
           {resumeText && !resumeText.includes('Start building') && (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={handlePreview}
                 disabled={isGenerating}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition-all shadow-md hover:shadow-lg"
+                className="flex items-center gap-2 px-3 py-2 bg-white text-gray-900 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition-all shadow-md hover:shadow-lg"
+                title="Preview PDF"
               >
-                <HiOutlineEye className="w-5 h-5" />
-                <span>{isGenerating ? 'Generating...' : 'Preview PDF'}</span>
+                <HiOutlineEye className="w-4 h-4" />
+                <span className="hidden sm:inline">{isGenerating ? 'Generating...' : 'Preview'}</span>
+              </button>
+              <button
+                onClick={handlePrintPreview}
+                className="flex items-center gap-2 px-3 py-2 bg-white text-gray-900 rounded-lg hover:bg-gray-100 text-sm font-semibold transition-all shadow-md hover:shadow-lg"
+                title="Print Preview"
+              >
+                <HiOutlinePrinter className="w-4 h-4" />
+                <span className="hidden sm:inline">Print</span>
               </button>
               <button
                 onClick={handleDownload}
                 disabled={isGenerating}
-                className="flex items-center gap-2 px-4 py-2 bg-white text-gray-800 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition-all shadow-md hover:shadow-lg"
+                className="flex items-center gap-2 px-3 py-2 bg-white text-gray-900 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition-all shadow-md hover:shadow-lg"
+                title="Download PDF"
               >
-                <HiOutlineArrowDownTray className="w-5 h-5" />
-                <span>{isGenerating ? 'Generating...' : 'Download PDF'}</span>
+                <HiOutlineArrowDownTray className="w-4 h-4" />
+                <span className="hidden sm:inline">{isGenerating ? 'Generating...' : 'PDF'}</span>
+              </button>
+              <button
+                onClick={handleExportWord}
+                className="flex items-center gap-2 px-3 py-2 bg-white text-gray-900 rounded-lg hover:bg-gray-100 text-sm font-semibold transition-all shadow-md hover:shadow-lg"
+                title="Export as Word"
+              >
+                <HiOutlineDocumentArrowDown className="w-4 h-4" />
+                <span className="hidden sm:inline">Word</span>
               </button>
             </div>
           )}

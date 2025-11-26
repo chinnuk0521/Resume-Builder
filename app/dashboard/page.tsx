@@ -170,8 +170,8 @@ export default function DashboardPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
       </div>
     )
   }
@@ -181,30 +181,27 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="container mx-auto px-4 py-4">
+      <header className="bg-white border-b border-gray-100 sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">RO</span>
-              </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
-                Resume Optimizer
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+                Resume Builder
               </h1>
             </div>
             <div className="flex items-center gap-4">
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
+              <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-gray-700">{user.email}</span>
+                <span className="text-sm text-gray-700 font-medium">{user.email}</span>
               </div>
               <button
                 onClick={async () => {
                   await supabase.auth.signOut()
                   router.push('/')
                 }}
-                className="px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+                className="px-4 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors font-medium"
               >
                 Sign Out
               </button>
@@ -214,14 +211,14 @@ export default function DashboardPage() {
       </header>
 
       {/* Tabs */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="container mx-auto px-4">
-          <div className="flex gap-2">
+      <div className="bg-white border-b border-gray-100">
+        <div className="container mx-auto px-6">
+          <div className="flex gap-1">
             <button
               onClick={() => setActiveTab('build')}
               className={`px-6 py-4 font-semibold border-b-2 transition-all relative ${
                 activeTab === 'build'
-                  ? 'border-blue-600 text-blue-600'
+                  ? 'border-gray-900 text-gray-900'
                   : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
               }`}
             >
@@ -234,13 +231,13 @@ export default function DashboardPage() {
               onClick={() => setActiveTab('optimize')}
               className={`px-6 py-4 font-semibold border-b-2 transition-all relative ${
                 activeTab === 'optimize'
-                  ? 'border-blue-600 text-blue-600'
+                  ? 'border-gray-900 text-gray-900'
                   : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
               }`}
             >
               <span className="flex items-center gap-2">
                 <HiOutlineSparkles className="w-5 h-5" />
-                <span>Optimize for JD</span>
+                <span>Optimize for Job</span>
               </span>
             </button>
           </div>
@@ -248,17 +245,17 @@ export default function DashboardPage() {
       </div>
 
       {/* Content */}
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-6 py-8">
         {activeTab === 'build' ? (
           <div className="grid lg:grid-cols-2 gap-8">
-            <div className="lg:max-h-[calc(100vh-180px)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+            <div className="lg:max-h-[calc(100vh-200px)] overflow-y-auto">
               <ResumeBuilder
                 profileData={profileData}
                 onSave={loadProfile}
                 onDataChange={setLiveFormData}
               />
             </div>
-            <div className="sticky top-4 h-fit lg:max-h-[calc(100vh-100px)]">
+            <div className="sticky top-4 h-fit lg:max-h-[calc(100vh-120px)]">
               <ResumePreview 
                 profileData={profileData} 
                 liveData={liveFormData}
@@ -269,8 +266,9 @@ export default function DashboardPage() {
           <div className="max-w-4xl mx-auto space-y-6">
             {profileData ? (
               <>
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <h2 className="text-xl font-semibold mb-4">Paste Job Description</h2>
+                <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Optimize Your Resume</h2>
+                  <p className="text-gray-600 mb-6">Paste a job description below and we'll optimize your resume to match the requirements.</p>
                   <JobDescription
                     value={jobDescription}
                     onChange={setJobDescription}
@@ -278,14 +276,21 @@ export default function DashboardPage() {
                   <button
                     onClick={handleOptimize}
                     disabled={!jobDescription.trim() || isOptimizing}
-                    className="mt-4 w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-colors"
+                    className="mt-6 w-full px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                   >
-                    {isOptimizing ? 'Optimizing...' : 'Optimize Resume'}
+                    {isOptimizing ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Optimizing...
+                      </span>
+                    ) : (
+                      'Optimize Resume'
+                    )}
                   </button>
                 </div>
                 {optimizedResume && (
-                  <div className="bg-white p-6 rounded-lg shadow">
-                    <h2 className="text-xl font-semibold mb-4">Optimized Resume</h2>
+                  <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Optimized Resume</h2>
                     <ResumePreview 
                       optimizedResume={optimizedResume}
                       profileData={profileData}
@@ -294,11 +299,11 @@ export default function DashboardPage() {
                 )}
               </>
             ) : (
-              <div className="bg-white p-8 rounded-lg shadow text-center">
-                <p className="text-gray-600 mb-4">Please build your resume first before optimizing.</p>
+              <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-12 text-center">
+                <p className="text-gray-600 mb-6 text-lg">Please build your resume first before optimizing.</p>
                 <button
                   onClick={() => setActiveTab('build')}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="px-8 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-semibold transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                 >
                   Go to Build Resume
                 </button>

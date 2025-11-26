@@ -3,13 +3,19 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
+// Validate environment variables for server-side
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('[Supabase Server] Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY')
+}
+
 // Server-side Supabase client (for API routes)
 // Only create client if we have the required environment variables
 export const supabaseServer = supabaseUrl && supabaseAnonKey
   ? createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         autoRefreshToken: false,
-        persistSession: false
+        persistSession: false,
+        flowType: 'pkce' // Use PKCE flow for better security
       }
     })
   : null as any

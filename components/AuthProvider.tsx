@@ -27,34 +27,80 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!supabase) {
+      console.error('[AuthProvider] Supabase client not initialized')
       setLoading(false)
       return
     }
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data }: { data: { session: Session | null } }) => {
-      setSession(data.session)
-      setUser(data.session?.user ?? null)
-      setLoading(false)
-    })
+    let mounted = true
 
-    // Listen for auth changes
+    // Get initial session with error handling
+    supabase.auth.getSession()
+      .then(({ data, error }) => {
+        if (!mounted) return
+        
+        if (error) {
+          console.error('[AuthProvider] Error getting session:', error.message)
+          setSession(null)
+          setUser(null)
+        } else {
+          setSession(data.session)
+          setUser(data.session?.user ?? null)
+        }
+        setLoading(false)
+      })
+      .catch((error) => {
+        if (!mounted) return
+        console.error('[AuthProvider] Unexpected error getting session:', error)
+        setSession(null)
+        setUser(null)
+        setLoading(false)
+      })
+
+    // Listen for auth changes with error handling
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
-      setSession(session)
-      setUser(session?.user ?? null)
+    } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+      if (!mounted) return
+
+      // Handle token refresh
+      if (event === 'TOKEN_REFRESHED') {
+        console.log('[AuthProvider] Token refreshed')
+      }
+
+      // Handle sign out
+      if (event === 'SIGNED_OUT') {
+        setSession(null)
+        setUser(null)
+      } else {
+        setSession(session)
+        setUser(session?.user ?? null)
+      }
       setLoading(false)
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   const signOut = async () => {
-    if (supabase) {
-      await supabase.auth.signOut()
+    try {
+      if (supabase) {
+        const { error } = await supabase.auth.signOut()
+        if (error) {
+          console.error('[AuthProvider] Error signing out:', error.message)
+        }
+      }
+    } catch (error) {
+      console.error('[AuthProvider] Unexpected error signing out:', error)
+    } finally {
+      // Always redirect, even if sign out fails
+      setSession(null)
+      setUser(null)
+      router.push('/auth/login')
     }
-    router.push('/auth/login')
   }
 
   return (

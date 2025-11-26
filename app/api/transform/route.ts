@@ -913,7 +913,7 @@ async function transformResumeWithLLM(data: ResumeData, jobDescription: string, 
     ? jobDescription.substring(0, maxPromptLength) + '...'
     : jobDescription
   
-  const prompt = `You are an expert resume optimizer and ATS (Applicant Tracking System) specialist. Transform the resume below to achieve 95%+ keyword matching with the job description.
+  const prompt = `You are an expert resume builder and ATS (Applicant Tracking System) specialist. Transform the resume below to achieve 95%+ keyword matching with the job description.
 
 CRITICAL INSTRUCTIONS - MUST FOLLOW EXACTLY:
 1. EXTRACT the EXACT job title/role from the JD (e.g., "Power BI Developer/Analyst") and use it in the Professional Summary
