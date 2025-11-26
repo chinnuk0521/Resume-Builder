@@ -80,53 +80,60 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
       resume += `PROFESSIONAL SUMMARY\n\n${dataToUse.profile.professional_summary}\n\n`
     }
 
-    // Education (matching image structure: University first, then degree with dates/location on same line)
+    // Education - Markdown table format
     if (dataToUse.education && dataToUse.education.length > 0) {
-      resume += `EDUCATION\n\n`
+      resume += `## Education\n\n`
       dataToUse.education.forEach((edu: any) => {
-        // University name first (bold in PDF) - on its own line
-        resume += `${edu.university || 'University'}\n\n`
-        // Degree with years/location on same line (degree left, dates/location right)
-        const degree = edu.degree || 'Degree'
-        const details: string[] = []
-        if (edu.years) details.push(edu.years)
-        if (edu.location) details.push(edu.location)
-        if (details.length > 0) {
-          // Format: "Degree||DATE:2019 - 2023 | Location" - special marker for PDF generator
-          resume += `${degree}||DATE:${details.join(' | ')}\n\n`
-        } else {
-          resume += `${degree}\n\n`
-        }
+        // Map fields (support both old and new format)
+        const school = edu.school || edu.university || 'University'
+        const location = edu.location || ''
+        const startYear = edu.start_year || (edu.years ? edu.years.split('-')[0].trim() : '')
+        const endYear = edu.end_year || (edu.years ? edu.years.split('-')[1]?.trim() || 'Present' : 'Present')
+        const course = edu.course || edu.degree || 'Degree'
+        
+        // Format: 2-column table with school on left, location and dates on right
+        const dateRange = endYear && endYear !== 'Present' ? `${startYear}–${endYear}` : 
+                         startYear ? `${startYear}–Present` : ''
+        const rightCell = location && dateRange ? `${location} — ${dateRange}` :
+                         location ? location :
+                         dateRange ? dateRange : ''
+        
+        resume += `| ${school} | ${rightCell} |\n`
+        resume += `${course}\n\n`
       })
     }
 
-    // Experience (matching image structure: Company first, then job title with dates on same line)
+    // Work Experience - Markdown table format
     if (dataToUse.experiences && dataToUse.experiences.length > 0) {
-      resume += `WORK EXPERIENCE\n\n`
+      resume += `## Work Experience\n\n`
       dataToUse.experiences.forEach((exp: any) => {
-        // Company name first (bold in PDF) - on its own line
-        resume += `${exp.company || 'Company'}\n\n`
-        // Job title with dates on same line (job title left, dates right)
-        if (exp.job_title) {
-          if (exp.start_date || exp.end_date) {
-            const dates = `${exp.start_date || 'Start Date'} – ${exp.end_date || 'Present'}`
-            // Format: "Job Title||DATE:Jan 2025 – Sept 2025" - special marker for PDF generator
-            resume += `${exp.job_title}||DATE:${dates}\n\n`
-          } else {
-            resume += `${exp.job_title}\n\n`
-          }
-        } else if (exp.start_date || exp.end_date) {
-          // Just dates if no job title
-          resume += `${exp.start_date || 'Start Date'} – ${exp.end_date || 'Present'}\n\n`
-        }
-        // Bullet points
-        if (exp.bullets && Array.isArray(exp.bullets) && exp.bullets.length > 0) {
-          exp.bullets.forEach((bullet: string) => {
-            if (bullet.trim()) {
-              resume += `• ${bullet}\n\n`
+        // Map fields (support both old and new format)
+        const jobTitle = exp.job_title || 'Job Title'
+        const location = exp.location || ''
+        const startYear = exp.start_year || (exp.start_date ? new Date(exp.start_date).getFullYear().toString() : '')
+        const endYear = exp.end_year || (exp.end_date ? (exp.end_date === 'Present' ? 'Present' : new Date(exp.end_date).getFullYear().toString()) : 'Present')
+        const company = exp.company || 'Company'
+        const achievements = exp.achievements || exp.bullets || []
+        
+        // Format: 2-column table with job title on left, location and dates on right
+        const dateRange = endYear && endYear !== 'Present' ? `${startYear}–${endYear}` : 
+                         startYear ? `${startYear}–Present` : ''
+        const rightCell = location && dateRange ? `${location} — ${dateRange}` :
+                         location ? location :
+                         dateRange ? dateRange : ''
+        
+        resume += `| ${jobTitle} | ${rightCell} |\n`
+        resume += `${company}\n`
+        
+        // Bullet list of achievements/responsibilities
+        if (Array.isArray(achievements) && achievements.length > 0) {
+          achievements.forEach((achievement: string) => {
+            if (achievement && achievement.trim()) {
+              resume += `• ${achievement.trim()}\n`
             }
           })
         }
+        resume += `\n`
       })
     }
 
@@ -434,9 +441,9 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
             textAlign: 'justify'
           }}>
             {resumeText.split('\n').map((line, idx) => {
-              // Check if it's the name (first line, all caps, not contact info)
+              // Check if it's the name (first line, all caps, not contact info, not Markdown header)
               if (idx === 0 && line.length > 3 && line.length < 50 && 
-                  !line.includes('@') && !line.includes('|') &&
+                  !line.includes('@') && !line.includes('|') && !line.startsWith('##') &&
                   !line.match(/^(PROFESSIONAL SUMMARY|EXPERIENCE|EDUCATION|SKILLS|ACHIEVEMENTS|PROJECTS|CERTIFICATIONS|LINKS|WORK EXPERIENCE|TECHNICAL SKILLS)$/)) {
                 return (
                   <div key={idx} className="text-center font-bold mb-2" style={{ fontSize: '25px' }}>
@@ -492,6 +499,19 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
                 )
               }
               
+              // Check for Markdown table row (| Left | Right |)
+              if (line.startsWith('| ') && line.endsWith(' |') && line.includes(' | ')) {
+                const cells = line.split('|').map(c => c.trim()).filter(c => c.length > 0)
+                if (cells.length >= 2) {
+                  return (
+                    <div key={idx} className="flex justify-between items-center mb-2">
+                      <span className="font-semibold">{cells[0]}</span>
+                      <span className="text-right">{cells[1]}</span>
+                    </div>
+                  )
+                }
+              }
+              
               // Check for special format with ||DATE: marker
               if (line.includes('||DATE:')) {
                 const parts = line.split('||DATE:')
@@ -505,6 +525,16 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
                     </div>
                   )
                 }
+              }
+              
+              // Check for Markdown section header (## Education, ## Work Experience)
+              if (line.startsWith('## ')) {
+                const sectionName = line.substring(3).trim()
+                return (
+                  <div key={idx} className="font-bold text-sm uppercase mt-4 mb-2">
+                    {sectionName}
+                  </div>
+                )
               }
               
               // Check if it's a date/location line that should be right-aligned

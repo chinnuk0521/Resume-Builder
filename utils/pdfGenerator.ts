@@ -227,6 +227,33 @@ export async function generatePDF(textContent: string) {
         continue
       }
 
+      // Check if it's a Markdown section header (## Education, ## Work Experience)
+      if (line.startsWith('## ')) {
+        const sectionName = line.substring(3).trim().toUpperCase()
+        const sectionHeaders = [
+          'PROFESSIONAL SUMMARY', 'WORK EXPERIENCE', 'EXPERIENCE', 
+          'EDUCATION', 'TECHNICAL SKILLS', 'SKILLS', 
+          'ACHIEVEMENTS', 'PROJECTS', 'CERTIFICATIONS', 'LINKS'
+        ]
+        // Map Markdown headers to section names
+        if (sectionName === 'EDUCATION' || sectionName === 'WORK EXPERIENCE') {
+          currentSection = sectionName
+          waitingForDateAfterCompany = false
+          waitingForDateAfterUniversity = false
+          yPosition -= sectionSpacing
+          currentPage.drawText(sectionName, {
+            x: MARGIN,
+            y: yPosition,
+            size: sectionHeaderSize,
+            font: boldFont,
+            color: rgb(0, 0, 0),
+          })
+          yPosition -= lineHeight + 6
+          i++
+          continue
+        }
+      }
+
       // Check if it's a section header (all caps, matches known sections)
       const sectionHeaders = [
         'PROFESSIONAL SUMMARY', 'WORK EXPERIENCE', 'EXPERIENCE', 
@@ -248,6 +275,92 @@ export async function generatePDF(textContent: string) {
         yPosition -= lineHeight + 6
         i++
         continue
+      }
+
+      // Check if it's a Markdown table row (| Left | Right |)
+      if (line.startsWith('| ') && line.endsWith(' |') && line.includes(' | ')) {
+        const cells = line.split('|').map(c => c.trim()).filter(c => c.length > 0)
+        if (cells.length >= 2) {
+          const leftCell = cells[0]
+          const rightCell = cells[1]
+          
+          // Parse right cell for location and dates (format: "Location — StartYear–EndYear")
+          const dateMatch = rightCell.match(/(.+?)\s*—\s*(.+)/)
+          let location = ''
+          let dateRange = ''
+          
+          if (dateMatch) {
+            location = dateMatch[1].trim()
+            dateRange = dateMatch[2].trim()
+          } else {
+            // Check if it's just a date range or just location
+            if (rightCell.match(/\d{4}[-–—]/)) {
+              dateRange = rightCell
+            } else {
+              location = rightCell
+            }
+          }
+          
+          // In Education section: left = school, right = location + dates, next line = course
+          if (currentSection === 'EDUCATION') {
+            // Draw school name on left (bold)
+            currentPage.drawText(leftCell, {
+              x: MARGIN,
+              y: yPosition,
+              size: fontSize + 1,
+              font: boldFont,
+              color: rgb(0, 0, 0),
+            })
+            
+            // Draw location and dates on right
+            if (rightCell) {
+              const rightWidth = font.widthOfTextAtSize(rightCell, fontSize)
+              const rightX = A4_WIDTH - MARGIN - rightWidth
+              currentPage.drawText(rightCell, {
+                x: rightX,
+                y: yPosition,
+                size: fontSize,
+                font: font,
+                color: rgb(0, 0, 0),
+              })
+            }
+            
+            yPosition -= lineHeight + 1
+            waitingForDateAfterUniversity = true
+            i++
+            continue
+          }
+          
+          // In Work Experience section: left = job title, right = location + dates, next line = company
+          if (currentSection === 'WORK EXPERIENCE' || currentSection === 'EXPERIENCE') {
+            // Draw job title on left
+            currentPage.drawText(leftCell, {
+              x: MARGIN,
+              y: yPosition,
+              size: fontSize,
+              font: font,
+              color: rgb(0, 0, 0),
+            })
+            
+            // Draw location and dates on right
+            if (rightCell) {
+              const rightWidth = font.widthOfTextAtSize(rightCell, fontSize)
+              const rightX = A4_WIDTH - MARGIN - rightWidth
+              currentPage.drawText(rightCell, {
+                x: rightX,
+                y: yPosition,
+                size: fontSize,
+                font: font,
+                color: rgb(0, 0, 0),
+              })
+            }
+            
+            yPosition -= lineHeight + 1
+            waitingForDateAfterCompany = true
+            i++
+            continue
+          }
+        }
       }
 
       // Check if it's a company name (in WORK EXPERIENCE section)
