@@ -573,7 +573,43 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
     alert('Contact information copied to clipboard!')
   }
 
-  // Import from PDF
+  /**
+   * ============================================================================
+   * PDF IMPORT FUNCTIONALITY - TEMPORARILY DISABLED
+   * ============================================================================
+   * 
+   * This feature allows users to import their existing resume from a PDF file.
+   * The system parses the PDF, extracts structured data, and populates the form
+   * fields automatically.
+   * 
+   * STATUS: DISABLED (commented out but code preserved)
+   * 
+   * To re-enable this feature:
+   * 1. Uncomment the handlePDFImport function below (lines ~577-811)
+   * 2. Uncomment the Import button in the UI (around line ~846)
+   * 3. Ensure the following dependencies are available:
+   *    - /api/parse route (app/api/parse/route.ts)
+   *    - PDF parser utility (utils/pdfParser.ts)
+   *    - pdf-parse npm package
+   * 
+   * RELATED FILES:
+   * - app/api/parse/route.ts - API endpoint for PDF parsing
+   * - utils/pdfParser.ts - PDF text extraction and parsing logic
+   * - components/ResumeBuilder.tsx - This file (UI and form population)
+   * 
+   * FEATURES:
+   * - Extracts: name, contact info, summary, experience, education, skills, 
+   *   projects, achievements, certifications
+   * - Handles multiple date formats
+   * - Auto-categorizes skills
+   * - Filters and validates extracted data
+   * - Matches manual entry format
+   * 
+   * ============================================================================
+   */
+  
+  // Import from PDF - DISABLED (see documentation above)
+  /* eslint-disable */
   const handlePDFImport = async () => {
     const input = document.createElement('input')
     input.type = 'file'
@@ -809,6 +845,7 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
     }
     input.click()
   }
+  /* eslint-enable */
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -842,6 +879,22 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                 Saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
             )}
+            {/* 
+              ====================================================================
+              PDF IMPORT BUTTON - TEMPORARILY DISABLED
+              ====================================================================
+              This button allows users to import their resume from a PDF file.
+              
+              STATUS: DISABLED (commented out but code preserved)
+              
+              To re-enable:
+              1. Uncomment the button code below
+              2. Uncomment the handlePDFImport function (see documentation above)
+              3. Ensure all dependencies are available (see handlePDFImport docs)
+              
+              ====================================================================
+            */}
+            {/* 
             <button
               onClick={handlePDFImport}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-700/50 text-white rounded-lg hover:bg-gray-700 text-xs font-medium transition-all"
@@ -850,6 +903,7 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
               <HiOutlineArrowDownTray className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Import</span>
             </button>
+            */}
             <button
               onClick={() => handleSave(false)}
               disabled={saving}
