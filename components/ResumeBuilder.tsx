@@ -582,6 +582,7 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
       const file = e.target.files[0]
       if (!file) return
 
+      // Client-side validation
       if (file.type !== 'application/pdf') {
         alert('Please upload a PDF file only')
         return
@@ -592,6 +593,10 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
         return
       }
 
+      // Show loading state
+      setSaving(true)
+      setSaveMessage('Parsing PDF...')
+
       try {
         const formData = new FormData()
         formData.append('file', file)
@@ -601,19 +606,184 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
           body: formData
         })
 
-        const data = await response.json()
-        if (data.error) {
-          alert(`Error parsing PDF: ${data.error}`)
+        // Check if response is OK
+        if (!response.ok) {
+          setSaving(false)
+          setSaveMessage('')
+          alert('Failed to parse PDF. Please try again.')
           return
         }
 
-        // Parse the extracted text and populate fields (basic parsing)
-        // This is a simplified version - you might want to enhance it
-        alert('PDF imported! Please review and update the extracted information.')
-        // Note: Full PDF parsing and field mapping would require more sophisticated parsing
-      } catch (error) {
+        const result = await response.json()
+
+        // Handle errors (including fallback errors with status 200)
+        if (result.error) {
+          setSaving(false)
+          setSaveMessage('')
+          alert(`Error parsing PDF: ${result.error}`)
+          return
+        }
+
+        // Check if we have structured data
+        if (result.success && result.data) {
+          const data = result.data
+
+          // Populate personal information
+          setFormData(prev => ({
+            ...prev,
+            first_name: data.firstName || prev.first_name,
+            last_name: data.lastName || prev.last_name,
+            middle_name: data.middleName || prev.middle_name,
+            email: data.email || prev.email,
+            phone: data.phone || prev.phone,
+            linkedin: data.linkedin || prev.linkedin,
+            github: data.github || prev.github,
+            portfolio: data.portfolio || prev.portfolio,
+            professional_summary: data.professionalSummary || prev.professional_summary
+          }))
+
+          // Populate experiences
+          if (data.experiences && data.experiences.length > 0) {
+            const formattedExperiences = data.experiences.map((exp: any) => {
+              // Normalize dates - extract year if full date provided
+              let startDate = exp.start_date || ''
+              let endDate = exp.end_date || 'Present'
+              
+              // Extract year from dates like "Jan 2020" or "2020-01"
+              if (startDate && !startDate.match(/^\d{4}$/)) {
+                const yearMatch = startDate.match(/\b(19|20)\d{2}\b/)
+                if (yearMatch) startDate = yearMatch[0]
+              }
+              
+              if (endDate && endDate.toLowerCase() !== 'present' && endDate.toLowerCase() !== 'current' && !endDate.match(/^\d{4}$/)) {
+                const yearMatch = endDate.match(/\b(19|20)\d{2}\b/)
+                if (yearMatch) endDate = yearMatch[0]
+              }
+              
+              return {
+                job_title: (exp.job_title || '').trim() || 'Position',
+                company: (exp.company || '').trim() || 'Company',
+                start_date: startDate,
+                end_date: endDate,
+                bullets: Array.isArray(exp.bullets) 
+                  ? exp.bullets.filter((b: any) => b && typeof b === 'string' && b.trim().length > 0)
+                  : []
+              }
+            }).filter((exp: any) => exp.job_title !== 'Position' || exp.company !== 'Company') // Remove empty entries
+            
+            if (formattedExperiences.length > 0) {
+              setExperiences(formattedExperiences)
+            }
+          }
+
+          // Populate education
+          if (data.education && data.education.length > 0) {
+            const formattedEducation = data.education.map((edu: any) => {
+              let startYear = edu.start_year || ''
+              let endYear = edu.end_year || ''
+              
+              // Extract year if full date provided
+              if (startYear && !startYear.match(/^\d{4}$/)) {
+                const yearMatch = startYear.match(/\b(19|20)\d{2}\b/)
+                if (yearMatch) startYear = yearMatch[0]
+              }
+              
+              if (endYear && endYear.toLowerCase() !== 'present' && !endYear.match(/^\d{4}$/)) {
+                const yearMatch = endYear.match(/\b(19|20)\d{2}\b/)
+                if (yearMatch) endYear = yearMatch[0]
+              }
+              
+              return {
+                course: (edu.course || '').trim() || 'Degree',
+                school: (edu.school || '').trim() || 'Institution',
+                location: (edu.location || '').trim(),
+                start_year: startYear,
+                end_year: endYear,
+                years: startYear && endYear 
+                  ? `${startYear}–${endYear}` 
+                  : startYear || endYear || ''
+              }
+            }).filter((edu: any) => edu.course !== 'Degree' || edu.school !== 'Institution') // Remove empty entries
+            
+            if (formattedEducation.length > 0) {
+              setEducation(formattedEducation)
+            }
+          }
+
+          // Populate skills
+          if (data.skills && data.skills.length > 0) {
+            const formattedSkills: any[] = []
+            data.skills.forEach((skillGroup: any) => {
+              if (skillGroup.items && Array.isArray(skillGroup.items)) {
+                skillGroup.items.forEach((item: string) => {
+                  formattedSkills.push({
+                    category: skillGroup.category || 'others',
+                    skill_name: item
+                  })
+                })
+              }
+            })
+            setSkills(formattedSkills)
+          }
+
+          // Populate projects
+          if (data.projects && data.projects.length > 0) {
+            const formattedProjects = data.projects.map((proj: any) => ({
+              title: proj.title || '',
+              description: proj.description || '',
+              contribution: proj.contribution || '',
+              tech_stack: proj.tech_stack || ''
+            }))
+            setProjects(formattedProjects)
+          }
+
+          // Populate achievements
+          if (data.achievements && data.achievements.length > 0) {
+            const formattedAchievements = data.achievements
+              .filter((ach: string) => ach && typeof ach === 'string' && ach.trim().length > 0)
+              .map((ach: string) => ({
+                achievement_text: ach.trim()
+              }))
+            if (formattedAchievements.length > 0) {
+              setAchievements(formattedAchievements)
+            }
+          }
+
+          // Populate certifications
+          if (data.certifications && data.certifications.length > 0) {
+            const formattedCertifications = data.certifications
+              .filter((cert: string) => cert && typeof cert === 'string' && cert.trim().length > 0)
+              .map((cert: string) => ({
+                certification_name: cert.trim()
+              }))
+            if (formattedCertifications.length > 0) {
+              setCertifications(formattedCertifications)
+            }
+          }
+
+          setSaving(false)
+          setSaveMessage('PDF imported successfully! Please review and update the extracted information.')
+          setShowCelebration(true)
+          setTimeout(() => setShowCelebration(false), 3000)
+
+          // Scroll to top to show the imported data
+          window.scrollTo({ top: 0, behavior: 'smooth' })
+        } else if (result.resumeText) {
+          // Fallback: if parsing failed but we have raw text
+          setSaving(false)
+          setSaveMessage('')
+          alert('PDF text extracted but structure parsing failed. The PDF may have an unusual format. Please manually fill in the form.')
+        } else {
+          // No data at all
+          setSaving(false)
+          setSaveMessage('')
+          alert('Failed to extract data from PDF. Please try again or use a different PDF file.')
+        }
+      } catch (error: any) {
         console.error('Error importing PDF:', error)
-        alert('Failed to import PDF. Please try again.')
+        setSaving(false)
+        setSaveMessage('')
+        alert(`Failed to import PDF: ${error.message || 'Please try again.'}`)
       }
     }
     input.click()
@@ -1785,3 +1955,4 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
     </div>
   )
 }
+

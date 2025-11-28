@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import pdfParse from 'pdf-parse'
+import { parsePDFText } from '@/utils/pdfParser'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -168,14 +169,31 @@ export async function POST(request: NextRequest) {
     // Limit text size to prevent memory issues
     const maxTextLength = MAX_RESUME_LENGTH
     const finalText = trimmedText.length > maxTextLength 
-      ? trimmedText.substring(0, maxTextLength) + '...'
+      ? trimmedText.substring(0, maxTextLength) 
       : trimmedText
 
+    // Parse the text into structured data
+    let parsedData
+    try {
+      parsedData = parsePDFText(finalText)
+      console.log(`[Parse API] Successfully parsed resume data`)
+    } catch (parseError: any) {
+      console.error('[Parse API] Error parsing resume text:', parseError.message)
+      // Return raw text as fallback if parsing fails
+      return NextResponse.json({
+        error: 'Failed to parse resume structure. The PDF may have an unusual format.',
+        resumeText: finalText,
+        fallback: true
+      }, { status: 200 })
+    }
+
     const processingTime = Date.now() - startTime
-    console.log(`[Parse API] Success - File size: ${file.size} bytes, Text length: ${finalText.length}, Time: ${processingTime}ms`)
+    console.log(`[Parse API] Success - File size: ${file.size} bytes, Text length: ${finalText.length}, Parsed data: ${JSON.stringify(parsedData).length} bytes, Time: ${processingTime}ms`)
 
     return NextResponse.json({ 
-      resumeText: finalText,
+      success: true,
+      data: parsedData,
+      resumeText: finalText, // Keep raw text for fallback
       processingTime: processingTime
     })
     
