@@ -707,7 +707,7 @@ function extractSkills(text: string, lowerText: string, lines: string[]): Parsed
     if (categories[category].length > 0) {
       skills.push({
         category,
-        items: [...new Set(categories[category])] // Remove duplicates
+        items: Array.from(new Set(categories[category])) // Remove duplicates
       })
     }
   })
