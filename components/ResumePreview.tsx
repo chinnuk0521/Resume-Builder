@@ -80,50 +80,61 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
       resume += `PROFESSIONAL SUMMARY\n\n${dataToUse.profile.professional_summary}\n\n`
     }
 
-    // Education - Markdown table format
+    // Education - Exact format matching the PDF: | University | Location | with dates right-aligned
     if (dataToUse.education && dataToUse.education.length > 0) {
       resume += `## Education\n\n`
       dataToUse.education.forEach((edu: any) => {
         // Map fields (support both old and new format)
-        const school = edu.school || edu.university || 'University'
+        const university = edu.school || edu.university || 'University'
         const location = edu.location || ''
-        const startYear = edu.start_year || (edu.years ? edu.years.split('-')[0].trim() : '')
-        const endYear = edu.end_year || (edu.years ? edu.years.split('-')[1]?.trim() || 'Present' : 'Present')
-        const course = edu.course || edu.degree || 'Degree'
+        const startYear = edu.start_year || (edu.years ? edu.years.split(/[-–—]/)[0].trim() : '')
+        const endYear = edu.end_year || (edu.years ? edu.years.split(/[-–—]/)[1]?.trim() || 'Present' : 'Present')
+        const degree = edu.course || edu.degree || 'Degree'
         
-        // Format: 2-column table with school on left, location and dates on right
+        // Format: | University | Location | (dates on separate line, right-aligned)
         const dateRange = endYear && endYear !== 'Present' ? `${startYear}–${endYear}` : 
                          startYear ? `${startYear}–Present` : ''
-        const rightCell = location && dateRange ? `${location} — ${dateRange}` :
-                         location ? location :
-                         dateRange ? dateRange : ''
         
-        resume += `| ${school} | ${rightCell} |\n`
-        resume += `${course}\n\n`
+        // Format exactly like PDF: | University | Location |
+        if (location) {
+          resume += `| ${university} | ${location} |\n`
+        } else {
+          resume += `| ${university} |\n`
+        }
+        
+        // Dates on same line, right-aligned (PDF generator handles alignment)
+        if (dateRange) {
+          resume += `${dateRange}\n`
+        }
+        
+        resume += `${degree}\n\n`
       })
     }
 
-    // Work Experience - Markdown table format
+    // Work Experience - Exact format matching the PDF: | Job Title | with dates right-aligned
     if (dataToUse.experiences && dataToUse.experiences.length > 0) {
-      resume += `## Work Experience\n\n`
+      resume += `WORK EXPERIENCE\n\n`
       dataToUse.experiences.forEach((exp: any) => {
         // Map fields (support both old and new format)
         const jobTitle = exp.job_title || 'Job Title'
-        const location = exp.location || ''
-        const startYear = exp.start_year || (exp.start_date ? new Date(exp.start_date).getFullYear().toString() : '')
-        const endYear = exp.end_year || (exp.end_date ? (exp.end_date === 'Present' ? 'Present' : new Date(exp.end_date).getFullYear().toString()) : 'Present')
+        const startYear = exp.start_year || (exp.start_date ? (exp.start_date.match(/\d{4}/)?.[0] || new Date(exp.start_date).getFullYear().toString()) : '')
+        const endYear = exp.end_year || (exp.end_date ? (exp.end_date === 'Present' || exp.end_date === 'present' ? 'Present' : (exp.end_date.match(/\d{4}/)?.[0] || new Date(exp.end_date).getFullYear().toString())) : 'Present')
         const company = exp.company || 'Company'
         const achievements = exp.achievements || exp.bullets || []
         
-        // Format: 2-column table with job title on left, location and dates on right
+        // Format: | Job Title | with dates right-aligned on same line (exact PDF format)
         const dateRange = endYear && endYear !== 'Present' ? `${startYear}–${endYear}` : 
                          startYear ? `${startYear}–Present` : ''
-        const rightCell = location && dateRange ? `${location} — ${dateRange}` :
-                         location ? location :
-                         dateRange ? dateRange : ''
         
-        resume += `| ${jobTitle} | ${rightCell} |\n`
-        resume += `${company}\n`
+        // Format exactly like PDF: | Job Title | dates (right-aligned)
+        if (dateRange) {
+          resume += `| ${jobTitle} | ${dateRange}\n`
+        } else {
+          resume += `| ${jobTitle} |\n`
+        }
+        
+        // Company name on next line, uppercase and bold in PDF
+        resume += `${company.toUpperCase()}\n`
         
         // Bullet list of achievements/responsibilities
         if (Array.isArray(achievements) && achievements.length > 0) {

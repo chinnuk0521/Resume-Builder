@@ -1209,9 +1209,9 @@ export function formatResume(data: ResumeData, jobDescription: string): string {
     .trim()
   resume += `${cleanSummary}\n\n`
 
-  // EXPERIENCE
+  // WORK EXPERIENCE
   if (optimizedData.experience.length > 0) {
-    resume += `EXPERIENCE\n\n`
+    resume += `WORK EXPERIENCE\n\n`
     for (const exp of optimizedData.experience) {
       // Validate experience entry - skip if title/company are placeholders or invalid
       if (exp.title === 'Position' || exp.company === 'Company' || 
@@ -1223,12 +1223,20 @@ export function formatResume(data: ResumeData, jobDescription: string): string {
       
       // Optimize job title if it matches JD role
       const optimizedTitle = optimizeJobTitle(exp.title, jdAnalysis)
-      resume += `${optimizedTitle} — ${exp.company}\n\n`
       
-      // Only add dates if they're not placeholders
-      if (exp.startDate !== 'Start Date' && exp.endDate !== 'End Date') {
-        resume += `${exp.startDate} – ${exp.endDate}\n\n`
+      // Format exactly like PDF: | Job Title | dates
+      const dateRange = (exp.startDate !== 'Start Date' && exp.endDate !== 'End Date')
+        ? `${exp.startDate.replace(/\s*[-–—]\s*/, '–')} – ${exp.endDate.replace(/\s*[-–—]\s*/, '–')}`
+        : ''
+      
+      if (dateRange) {
+        resume += `| ${optimizedTitle} | ${dateRange}\n`
+      } else {
+        resume += `| ${optimizedTitle} |\n`
       }
+      
+      // Company name on next line (uppercase)
+      resume += `${exp.company.toUpperCase()}\n\n`
       
       // Only add bullets if they exist and aren't placeholders
       if (exp.bullets.length > 0 && !exp.bullets[0].includes('Key responsibilities and achievements')) {
@@ -1302,17 +1310,27 @@ export function formatResume(data: ResumeData, jobDescription: string): string {
         degree = degree.replace(new RegExp(university, 'gi'), '').trim()
       }
       
-      resume += `${degree} — ${university}\n\n`
-      const eduDetails: string[] = []
-      if (edu.years && edu.years !== 'Years' && !edu.years.match(/^years?$/i)) {
-        eduDetails.push(edu.years)
+      // Format exactly like PDF: | University | Location | with dates right-aligned separately
+      const dateRange = edu.years && edu.years !== 'Years' && !edu.years.match(/^years?$/i) 
+        ? edu.years.replace(/\s*[-–—]\s*/, '–')
+        : ''
+      const location = edu.location && edu.location !== 'Location' && !edu.location.match(/^location$/i)
+        ? edu.location
+        : ''
+      
+      // Format: | University | Location |
+      if (location) {
+        resume += `| ${university} | ${location} |\n`
+      } else {
+        resume += `| ${university} |\n`
       }
-      if (edu.location && edu.location !== 'Location' && !edu.location.match(/^location$/i)) {
-        eduDetails.push(edu.location)
+      
+      // Add dates on same line, right-aligned (PDF generator will handle alignment)
+      if (dateRange) {
+        resume += `${dateRange}\n`
       }
-      if (eduDetails.length > 0) {
-        resume += `${eduDetails.join(' | ')}\n\n`
-      }
+      
+      resume += `${degree}\n\n`
     }
   } else {
     console.log('[formatResume] WARNING: No education entries to format!')
