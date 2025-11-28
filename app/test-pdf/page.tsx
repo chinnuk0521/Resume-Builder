@@ -7,30 +7,37 @@ export default function TestPDFPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [status, setStatus] = useState('')
 
-  // Sample resume data matching the exact format from the PDF
-  const testResumeText = `CHANDU KALLURU
+  // Sample resume data matching ATS-friendly format
+  const testResumeText = `YOUR FULL NAME
 
-chandu.kalluru@outlook.com | +918179299096 | LinkedIn | Portfolio | GitHub
+Phone | Email | LinkedIn | Portfolio
 
-PROFESSIONAL SUMMARY
+SUMMARY
 
-Software engineer with 2+ years of experience in full-stack development, data analytics, and blockchain technologies. Skilled in building scalable web applications, RESTful APIs, and interactive dashboards. Experienced in React, Python, SQL, and Power BI, with proven success in designing ETL pipelines, delivering analytics solutions, and implementing smart contracts. Adept at collaborating with cross-functional teams, applying Agile and Test-Driven Development (TDD) practices, and driving projects from concept to deployment. Passionate about leveraging modern technologies to deliver high-impact software solutions for businesses.
+Software engineer with 2+ years of experience in full-stack development, data analytics, and blockchain technologies. Skilled in building scalable web applications, RESTful APIs, and interactive dashboards.
 
-EDUCATION
+SKILLS
 
-| Yogi Vemana University | Proddatur, India |
-2019–2023
-Bachelor of Technology in Computer Science & Engineering
+• Programming: React, Python, JavaScript, TypeScript
+• Tools: Power BI, SQL, Git, Docker
+• Databases: PostgreSQL, MongoDB, MySQL
+• Cloud: AWS, Azure, GCP
 
-WORK EXPERIENCE
+EXPERIENCE
 
-| Project Associate | 2025–2025
+Project Associate — 2025 – 2025
 INDIAN INSTITUTE OF TECHNOLOGY, MADRAS
 • Lead research on Blockchain Technology and Distributed Ledger Technologies (DLTs)
 • Developed a proof-of-concept decentralized e-voting application using WebAssembly and WIDL
 • Design and deploy Smart Contracts for enterprise use cases with a focus on security and efficiency
 • Collaborate with cross-functional teams to develop innovative blockchain solutions
 • Mentored 4 interns working on blockchain research projects and implementation
+
+EDUCATION
+
+Bachelor of Technology in Computer Science & Engineering — 2019 – 2023
+Yogi Vemana University
+Proddatur, India
 `
 
   const handleGenerate = async () => {
@@ -121,13 +128,17 @@ INDIAN INSTITUTE OF TECHNOLOGY, MADRAS
           </div>
 
           <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-            <h3 className="font-semibold text-blue-900 mb-2">Expected Format:</h3>
+            <h3 className="font-semibold text-blue-900 mb-2">ATS-Friendly Format Specifications:</h3>
             <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-              <li>Name: Centered, uppercase, bold</li>
-              <li>Contact: Centered with pipes</li>
-              <li>Education: | University | Location | with dates right-aligned</li>
-              <li>Work Experience: | Job Title | dates | with company name uppercase and bold</li>
-              <li>Bullet points: Properly indented</li>
+              <li>Name: Centered, 19pt, uppercase, bold</li>
+              <li>Contact: Centered with pipes, 10.5pt</li>
+              <li>Section Headers: Left-aligned, 11.5pt, bold, ALL CAPS</li>
+              <li>Experience: Job Title — Start – End (dates right-aligned)</li>
+              <li>Company Names: Uppercase, bold, on next line</li>
+              <li>Education: Degree — Start – End (dates right-aligned)</li>
+              <li>Bullet points: 5mm indent, proper hanging indent</li>
+              <li>Margins: 18mm top/bottom, 15mm left/right</li>
+              <li>Line spacing: 1.1 (10.5pt font = 11.55pt line height)</li>
             </ul>
           </div>
         </div>

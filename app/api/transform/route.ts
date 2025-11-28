@@ -1209,9 +1209,9 @@ export function formatResume(data: ResumeData, jobDescription: string): string {
     .trim()
   resume += `${cleanSummary}\n\n`
 
-  // WORK EXPERIENCE
+  // EXPERIENCE
   if (optimizedData.experience.length > 0) {
-    resume += `WORK EXPERIENCE\n\n`
+    resume += `EXPERIENCE\n\n`
     for (const exp of optimizedData.experience) {
       // Validate experience entry - skip if title/company are placeholders or invalid
       if (exp.title === 'Position' || exp.company === 'Company' || 
@@ -1224,26 +1224,29 @@ export function formatResume(data: ResumeData, jobDescription: string): string {
       // Optimize job title if it matches JD role
       const optimizedTitle = optimizeJobTitle(exp.title, jdAnalysis)
       
-      // Format exactly like PDF: | Job Title | dates
+      // ATS-friendly format: Job Title — Start – End (dates will be right-aligned)
       const dateRange = (exp.startDate !== 'Start Date' && exp.endDate !== 'End Date')
-        ? `${exp.startDate.replace(/\s*[-–—]\s*/, '–')} – ${exp.endDate.replace(/\s*[-–—]\s*/, '–')}`
+        ? `${exp.startDate.replace(/\s*[-–—]\s*/, '')} – ${exp.endDate.replace(/\s*[-–—]\s*/, '')}`
         : ''
       
+      // Simple text format with em dash separator
       if (dateRange) {
-        resume += `| ${optimizedTitle} | ${dateRange}\n`
+        resume += `${optimizedTitle} — ${dateRange}\n`
       } else {
-        resume += `| ${optimizedTitle} |\n`
+        resume += `${optimizedTitle}\n`
       }
       
-      // Company name on next line (uppercase)
+      // Company name on next line (uppercase, bold in PDF)
       resume += `${exp.company.toUpperCase()}\n\n`
       
-      // Only add bullets if they exist and aren't placeholders
+      // Only add bullets if they exist and aren't placeholders (max 4-6 bullets)
       if (exp.bullets.length > 0 && !exp.bullets[0].includes('Key responsibilities and achievements')) {
-        for (const bullet of exp.bullets) {
+        const maxBullets = 6
+        const bulletsToAdd = exp.bullets.slice(0, maxBullets)
+        for (const bullet of bulletsToAdd) {
           if (bullet.trim().length > 5) {
             const optimizedBullet = optimizeExperienceBullet(bullet, jdAnalysis, jobDescription)
-            resume += `• ${optimizedBullet}\n\n`
+            resume += `• ${optimizedBullet}\n`
           }
         }
       }
@@ -1310,27 +1313,30 @@ export function formatResume(data: ResumeData, jobDescription: string): string {
         degree = degree.replace(new RegExp(university, 'gi'), '').trim()
       }
       
-      // Format exactly like PDF: | University | Location | with dates right-aligned separately
+      // ATS-friendly format: Degree — Start – End (dates will be right-aligned)
       const dateRange = edu.years && edu.years !== 'Years' && !edu.years.match(/^years?$/i) 
-        ? edu.years.replace(/\s*[-–—]\s*/, '–')
+        ? edu.years.replace(/\s*[-–—]\s*/, ' – ')
         : ''
       const location = edu.location && edu.location !== 'Location' && !edu.location.match(/^location$/i)
         ? edu.location
         : ''
       
-      // Format: | University | Location |
-      if (location) {
-        resume += `| ${university} | ${location} |\n`
-      } else {
-        resume += `| ${university} |\n`
-      }
-      
-      // Add dates on same line, right-aligned (PDF generator will handle alignment)
+      // Simple text format with em dash separator
       if (dateRange) {
-        resume += `${dateRange}\n`
+        resume += `${degree} — ${dateRange}\n`
+      } else {
+        resume += `${degree}\n`
       }
       
-      resume += `${degree}\n\n`
+      // University name on next line (bold in PDF)
+      resume += `${university}\n`
+      
+      // Location on next line if present
+      if (location) {
+        resume += `${location}\n`
+      }
+      
+      resume += `\n`
     }
   } else {
     console.log('[formatResume] WARNING: No education entries to format!')

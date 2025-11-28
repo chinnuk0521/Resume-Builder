@@ -8,7 +8,9 @@ import {
   COLORS,
   getContentWidth,
   getStartY,
-  getMinY
+  getMinY,
+  getRightAlignedX,
+  validateTemplate
 } from './resumeTemplate'
 
 // Helper function to extract URLs from contact string
@@ -43,13 +45,19 @@ function extractUrls(contactLine: string): { linkedin?: string, github?: string,
 }
 
 /**
- * Generate PDF using EXACT template configuration
+ * Generate PDF using ATS-friendly template configuration
+ * Simple text format - no tables, no complex layouts
  * This is completely generic - works for ALL users with their own data
  */
 export async function generatePDF(textContent: string) {
   // Input validation
   if (!textContent || typeof textContent !== 'string' || textContent.trim().length === 0) {
     throw new Error('Invalid text content for PDF generation')
+  }
+
+  // Validate template configuration
+  if (!validateTemplate()) {
+    throw new Error('Invalid template configuration')
   }
 
   // Limit content size to prevent memory issues
@@ -80,8 +88,7 @@ export async function generatePDF(textContent: string) {
   
     // Track context for formatting
     let currentSection = ''
-    let waitingForDateAfterCompany = false
-    let waitingForDateAfterUniversity = false
+    let isFirstLine = true
 
     let i = 0
     while (i < lines.length) {
@@ -97,11 +104,11 @@ export async function generatePDF(textContent: string) {
         break
       }
 
-      // ===== NAME (First line, centered, uppercase, bold) =====
-      if (i === 0 && line.length > 3 && line.length < 50 && 
+      // ===== NAME (First substantial line, centered, uppercase, bold) =====
+      if (isFirstLine && line.length > 3 && line.length < 50 && 
           !line.includes('@') && !line.includes('|') && 
           !line.match(/\d{10,}/) &&
-          !line.match(/^(PROFESSIONAL SUMMARY|EXPERIENCE|EDUCATION|SKILLS|ACHIEVEMENTS|PROJECTS|CERTIFICATIONS|LINKS|WORK EXPERIENCE|TECHNICAL SKILLS)$/)) {
+          !line.match(/^(SUMMARY|SKILLS|EXPERIENCE|EDUCATION|PROJECTS|CERTIFICATIONS|WORK EXPERIENCE|PROFESSIONAL SUMMARY)$/)) {
         const nameText = TYPOGRAPHY.name.transform === 'uppercase' ? line.toUpperCase() : line
         const nameWidth = boldFont.widthOfTextAtSize(nameText, TYPOGRAPHY.name.size)
         const nameX = (PAGE_CONFIG.width - nameWidth) / 2 // Center horizontally
@@ -115,12 +122,13 @@ export async function generatePDF(textContent: string) {
         })
         
         yPosition -= TYPOGRAPHY.name.size + SPACING.afterName
+        isFirstLine = false
         i++
         continue
       }
 
       // ===== CONTACT INFO (Centered, with separators) =====
-      if (line.includes('@') || line.includes('|') || line.match(/linkedin|github|portfolio/i)) {
+      if (line.includes('@') || line.includes('|') || line.match(/linkedin|github|portfolio|phone/i)) {
         // Parse URLs from special format if present
         const urlMatch = line.match(/\|\|URLS:(.+)$/)
         const urlMap: { [key: string]: string } = {}
@@ -224,52 +232,28 @@ export async function generatePDF(textContent: string) {
         }
         
         yPosition -= TYPOGRAPHY.contact.lineHeight + SPACING.afterContact
+        isFirstLine = false
         i++
         continue
       }
 
-      // ===== SECTION HEADERS (Markdown format: ## Section Name) =====
-      if (line.startsWith('## ')) {
-        const sectionName = line.substring(3).trim().toUpperCase()
-        const sectionHeaders = [
-          'PROFESSIONAL SUMMARY', 'WORK EXPERIENCE', 'EXPERIENCE', 
-          'EDUCATION', 'TECHNICAL SKILLS', 'SKILLS', 
-          'ACHIEVEMENTS', 'PROJECTS', 'CERTIFICATIONS', 'LINKS'
-        ]
-        
-        if (sectionHeaders.includes(sectionName)) {
-          currentSection = sectionName
-          waitingForDateAfterCompany = false
-          waitingForDateAfterUniversity = false
-          
-          yPosition -= SPACING.beforeSection
-          
-          page.drawText(sectionName, {
-            x: PAGE_CONFIG.margin.left,
-            y: yPosition,
-            size: TYPOGRAPHY.sectionHeader.size,
-            font: boldFont,
-            color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
-          })
-          
-          yPosition -= TYPOGRAPHY.sectionHeader.size + SPACING.afterSectionHeader
-          i++
-          continue
-        }
-      }
-
-      // ===== SECTION HEADERS (Plain format: PROFESSIONAL SUMMARY) =====
+      // ===== SECTION HEADERS (All caps, bold, left-aligned) =====
       const sectionHeaders = [
-        'PROFESSIONAL SUMMARY', 'WORK EXPERIENCE', 'EXPERIENCE', 
-        'EDUCATION', 'TECHNICAL SKILLS', 'SKILLS', 
-        'ACHIEVEMENTS', 'PROJECTS', 'CERTIFICATIONS', 'LINKS'
+        'SUMMARY', 'PROFESSIONAL SUMMARY', 'SKILLS', 'TECHNICAL SKILLS',
+        'EXPERIENCE', 'WORK EXPERIENCE', 'EDUCATION', 
+        'PROJECTS', 'CERTIFICATIONS', 'ACHIEVEMENTS'
       ]
+      
       if (line === line.toUpperCase() && sectionHeaders.includes(line)) {
-        currentSection = line
-        waitingForDateAfterCompany = false
-        waitingForDateAfterUniversity = false
+        // Add spacing between sections (only if not first section)
+        if (currentSection && currentSection !== '') {
+          yPosition -= SPACING.betweenSections
+        } else {
+          yPosition -= SPACING.beforeSection
+        }
         
-        yPosition -= SPACING.beforeSection
+        currentSection = line
+        isFirstLine = false
         
         page.drawText(line, {
           x: PAGE_CONFIG.margin.left,
@@ -284,128 +268,70 @@ export async function generatePDF(textContent: string) {
         continue
       }
 
-      // ===== TABLE ROWS (Markdown format: | Left | Middle | Right |) =====
-      if (line.startsWith('| ') && line.endsWith(' |') && line.includes(' | ')) {
-        const cells = line.split('|').map(c => c.trim()).filter(c => c.length > 0)
-        if (cells.length >= 2) {
-          const leftCell = cells[0]
-          const middleCell = cells[1] || ''
-          const rightCell = cells[2] || '' // Dates for right alignment
-          
-          // In Education section: | University | Location | dates |
-          if (currentSection === 'EDUCATION') {
-            // Draw university name on left (bold) with pipe format
-            const universityText = `| ${leftCell} |`
-            page.drawText(universityText, {
-              x: SPACING.tableLeftMargin,
-              y: yPosition,
-              size: TYPOGRAPHY.company.size,
-              font: boldFont,
-              color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
-            })
-            
-            // Draw location in middle if present
-            let currentX = SPACING.tableLeftMargin + boldFont.widthOfTextAtSize(universityText, TYPOGRAPHY.company.size) + 8
-            if (middleCell && !middleCell.match(/\d{4}[-–—]/)) {
-              // Location (not dates)
-              const locationText = `${middleCell} |`
-              page.drawText(locationText, {
-                x: currentX,
-                y: yPosition,
-                size: TYPOGRAPHY.body.size,
-                font: font,
-                color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
-              })
-              currentX += font.widthOfTextAtSize(locationText, TYPOGRAPHY.body.size) + 8
+      // ===== EXPERIENCE FORMAT: "Job Title — Start – End" (dates right-aligned) =====
+      if ((currentSection === 'EXPERIENCE' || currentSection === 'WORK EXPERIENCE') &&
+          !line.startsWith('•') &&
+          (line.includes(' — ') || line.includes(' —') || line.match(/[A-Za-z].*[—–-].*\d{4}/)) && 
+          (line.match(/\d{4}/) || line.toLowerCase().includes('present'))) {
+        
+        // Parse: "Job Title — Start – End" or "Job Title — Start – Present"
+        // Support em dash (—), en dash (–), and regular dash (-) for separator
+        let separator = ' — '
+        if (!line.includes(' — ')) {
+          if (line.includes(' —')) separator = ' —'
+          else if (line.includes(' – ')) separator = ' – '
+          else if (line.includes(' –')) separator = ' –'
+          else if (line.match(/[A-Za-z].*[—–-]/)) {
+            const match = line.match(/(.*?)([—–-])(.*)/)
+            if (match) {
+              separator = match[2]
             }
-            
-            // Draw dates on right (right-aligned) - could be in middleCell or rightCell
-            const dateText = rightCell || (middleCell.match(/\d{4}[-–—]/) ? middleCell : '')
-            if (dateText) {
-              const dateWidth = font.widthOfTextAtSize(dateText, TYPOGRAPHY.body.size)
-              const dateX = PAGE_CONFIG.width - SPACING.tableRightMargin - dateWidth
-              page.drawText(dateText, {
-                x: dateX,
-                y: yPosition,
-                size: TYPOGRAPHY.body.size,
-                font: font,
-                color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
-              })
-            }
-            
-            // Check if next line is a date (right-aligned on same line)
-            if (i + 1 < lines.length) {
-              const nextLine = lines[i + 1].trim()
-              if (nextLine.match(/\d{4}[-–—]\s*(\d{4}|present|current)/i)) {
-                // Draw date on right, same Y position as university line
-                const dateWidth = font.widthOfTextAtSize(nextLine, TYPOGRAPHY.body.size)
-                const dateX = PAGE_CONFIG.width - SPACING.tableRightMargin - dateWidth
-                page.drawText(nextLine, {
-                  x: dateX,
-                  y: yPosition, // Same Y as university line
-                  size: TYPOGRAPHY.body.size,
-                  font: font,
-                  color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
-                })
-                i += 2 // Skip both table row and date line
-              } else {
-                i++
-              }
-            } else {
-              i++
-            }
-            
-            yPosition -= TYPOGRAPHY.body.lineHeight + 0.5
-            waitingForDateAfterUniversity = true
-            continue
           }
+        }
+        
+        const parts = line.split(separator)
+        if (parts.length === 2) {
+          const jobTitle = parts[0].trim()
+          const dateRange = parts[1].trim()
           
-          // In Work Experience section: | Job Title | dates |
-          if (currentSection === 'WORK EXPERIENCE' || currentSection === 'EXPERIENCE') {
-            // Draw job title on left with pipe format
-            const jobTitleText = `| ${leftCell} |`
-            page.drawText(jobTitleText, {
-              x: SPACING.tableLeftMargin,
-              y: yPosition,
-              size: TYPOGRAPHY.jobTitle.size,
-              font: font,
-              color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
-            })
-            
-            // Draw dates on right (right-aligned) - could be in middleCell or rightCell
-            const dateText = rightCell || middleCell
-            if (dateText && dateText.match(/\d{4}[-–—]/)) {
-              const dateWidth = font.widthOfTextAtSize(dateText, TYPOGRAPHY.body.size)
-              const dateX = PAGE_CONFIG.width - SPACING.tableRightMargin - dateWidth
-              page.drawText(dateText, {
-                x: dateX,
-                y: yPosition,
-                size: TYPOGRAPHY.body.size,
-                font: font,
-                color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
-              })
-            }
-            
-            yPosition -= TYPOGRAPHY.body.lineHeight + 0.5
-            waitingForDateAfterCompany = true
-            i++
-            continue
-          }
+          // Draw job title on left
+          page.drawText(jobTitle, {
+            x: PAGE_CONFIG.margin.left,
+            y: yPosition,
+            size: TYPOGRAPHY.jobTitle.size,
+            font: font,
+            color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
+          })
+          
+          // Draw dates on right (right-aligned)
+          const dateX = getRightAlignedX(dateRange, TYPOGRAPHY.dates.size, font)
+          page.drawText(dateRange, {
+            x: dateX,
+            y: yPosition,
+            size: TYPOGRAPHY.dates.size,
+            font: font,
+            color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
+          })
+          
+          yPosition -= TYPOGRAPHY.body.lineHeight + 1
+          i++
+          continue
         }
       }
 
-      // ===== COMPANY NAME (in WORK EXPERIENCE section) - should be uppercase and bold =====
-      if ((currentSection === 'WORK EXPERIENCE' || currentSection === 'EXPERIENCE') && 
-          !line.includes('—') && !line.includes('–') && 
-          !line.startsWith('•') && 
-          !line.startsWith('|') &&
-          !line.match(/\w+\s+\d{4}\s*[-–—]/) &&
-          !line.match(/\d{4}\s*[-–—]/) &&
-          !line.includes('||DATE:') &&
-          waitingForDateAfterCompany &&
-          i > 0) {
+      // ===== COMPANY NAME (in EXPERIENCE section, next line after job title) =====
+      if ((currentSection === 'EXPERIENCE' || currentSection === 'WORK EXPERIENCE') &&
+          !line.startsWith('•') &&
+          !line.includes(' — ') &&
+          !line.includes(' —') &&
+          !line.includes(' – ') &&
+          !line.match(/\d{4}[-–—]/) &&
+          i > 0 &&
+          !lines[i-1].startsWith('•') &&
+          (lines[i-1].includes(' — ') || lines[i-1].includes(' —') || lines[i-1].includes(' – ') || 
+           lines[i-1].match(/^(EXPERIENCE|WORK EXPERIENCE)$/))) {
         
-        // Draw company name on left (uppercase and bold) - dates are already in table row
+        // Draw company name (bold, uppercase)
         const companyText = line.toUpperCase()
         page.drawText(companyText, {
           x: PAGE_CONFIG.margin.left,
@@ -414,163 +340,112 @@ export async function generatePDF(textContent: string) {
           font: boldFont,
           color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
         })
+        
+        yPosition -= TYPOGRAPHY.body.lineHeight + SPACING.betweenEntries
         i++
-        waitingForDateAfterCompany = false
-        yPosition -= TYPOGRAPHY.body.lineHeight + 0.5
         continue
       }
 
-      // ===== UNIVERSITY NAME (in EDUCATION section) =====
-      if (currentSection === 'EDUCATION' && 
-          !line.includes('—') && !line.includes('–') && 
-          !line.startsWith('•') && 
-          !line.match(/\w+\s+\d{4}\s*[-–—]/) &&
-          !line.match(/\d{4}\s*[-–—]/) &&
-          !line.includes('||DATE:') &&
-          !waitingForDateAfterUniversity &&
-          i > 0 && 
-          (lines[i-1] === '' || sectionHeaders.includes(lines[i-1]))) {
+      // ===== EDUCATION FORMAT: "Degree — Start – End" (dates right-aligned) =====
+      if (currentSection === 'EDUCATION' &&
+          !line.startsWith('•') &&
+          (line.includes(' — ') || line.includes(' —') || line.match(/[A-Za-z].*[—–-].*\d{4}/)) &&
+          (line.match(/\d{4}/) || line.toLowerCase().includes('present'))) {
         
-        waitingForDateAfterUniversity = true
-        waitingForDateAfterCompany = false
-        
-        // Look ahead for date/location
-        let foundDateLocation = false
-        let dateLocationLine = ''
-        let dateIdx = i + 1
-        
-        while (dateIdx < lines.length && dateIdx < i + 5) {
-          const testLine = lines[dateIdx].trim()
-          if (!testLine) {
-            dateIdx++
-            continue
+        // Parse: "Degree — Start – End"
+        // Support em dash (—), en dash (–), and regular dash (-) for separator
+        let separator = ' — '
+        if (!line.includes(' — ')) {
+          if (line.includes(' —')) separator = ' —'
+          else if (line.includes(' – ')) separator = ' – '
+          else if (line.includes(' –')) separator = ' –'
+          else if (line.match(/[A-Za-z].*[—–-]/)) {
+            const match = line.match(/(.*?)([—–-])(.*)/)
+            if (match) {
+              separator = match[2]
+            }
           }
-          if ((testLine.includes('|') && testLine.match(/\d{4}/)) ||
-              testLine.match(/\d{4}\s*[-–—]\s*(\d{4}|present|current)/i)) {
-            foundDateLocation = true
-            dateLocationLine = testLine
-            break
-          }
-          if (testLine.startsWith('•') || sectionHeaders.includes(testLine)) {
-            break
-          }
-          dateIdx++
         }
         
-        if (foundDateLocation) {
-          // Draw university name on left (bold)
-          page.drawText(line, {
+        const parts = line.split(separator)
+        if (parts.length === 2) {
+          const degree = parts[0].trim()
+          const dateRange = parts[1].trim()
+          
+          // Draw degree on left
+          page.drawText(degree, {
             x: PAGE_CONFIG.margin.left,
             y: yPosition,
-            size: TYPOGRAPHY.company.size,
-            font: boldFont,
+            size: TYPOGRAPHY.jobTitle.size,
+            font: font,
             color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
           })
           
-          // Draw date/location on right, same line
-          const dateWidth = font.widthOfTextAtSize(dateLocationLine, TYPOGRAPHY.body.size)
-          const dateX = PAGE_CONFIG.width - PAGE_CONFIG.margin.right - dateWidth
-          page.drawText(dateLocationLine, {
+          // Draw dates on right (right-aligned)
+          const dateX = getRightAlignedX(dateRange, TYPOGRAPHY.dates.size, font)
+          page.drawText(dateRange, {
             x: dateX,
             y: yPosition,
-            size: TYPOGRAPHY.body.size,
+            size: TYPOGRAPHY.dates.size,
             font: font,
             color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
           })
           
-          i = dateIdx + 1
-          waitingForDateAfterUniversity = false
-        } else {
-          // Just draw university name
-          page.drawText(line, {
-            x: PAGE_CONFIG.margin.left,
-            y: yPosition,
-            size: TYPOGRAPHY.company.size,
-            font: boldFont,
-            color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
-          })
+          yPosition -= TYPOGRAPHY.body.lineHeight + 1
           i++
+          continue
         }
-        yPosition -= TYPOGRAPHY.body.lineHeight + 0.5
-        continue
       }
 
-      // ===== JOB TITLE OR DEGREE (after company/university) =====
-      if ((waitingForDateAfterCompany || waitingForDateAfterUniversity) &&
+      // ===== UNIVERSITY NAME (in EDUCATION section, next line after degree) =====
+      if (currentSection === 'EDUCATION' &&
           !line.startsWith('•') &&
-          !line.match(/\w+\s+\d{4}\s*[-–—]/) &&
-          !line.match(/\d{4}\s*[-–—]/) &&
-          !line.includes('|')) {
-        // Use table margin to match table row alignment
+          !line.includes(' — ') &&
+          !line.includes(' —') &&
+          !line.includes(' – ') &&
+          !line.match(/\d{4}[-–—]/) &&
+          i > 0 &&
+          (lines[i-1].includes(' — ') || lines[i-1].includes(' —') || lines[i-1].includes(' – '))) {
+        
+        // Draw university name (bold)
         page.drawText(line, {
-          x: SPACING.tableLeftMargin,
+          x: PAGE_CONFIG.margin.left,
           y: yPosition,
-          size: TYPOGRAPHY.jobTitle.size,
-          font: font,
+          size: TYPOGRAPHY.company.size,
+          font: boldFont,
           color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
         })
-        yPosition -= TYPOGRAPHY.body.lineHeight + 0.5
-        i++
-        continue
-      }
-
-      // ===== DATE RANGES (Right-aligned when after company/university) =====
-      if (line.match(/\w+\s+\d{4}\s*[-–—]\s*(\w+\s+\d{4}|present|current)/i) || 
-          line.match(/\d{4}\s*[-–—]\s*(\d{4}|present|current)/i) ||
-          (line.includes('|') && (line.match(/\d{4}/) || line.match(/present|current/i)))) {
         
-        if (waitingForDateAfterCompany || waitingForDateAfterUniversity) {
-          // Right-align dates
-          const textWidth = font.widthOfTextAtSize(line, TYPOGRAPHY.body.size)
-          const rightX = PAGE_CONFIG.width - PAGE_CONFIG.margin.right - textWidth
-          page.drawText(line, {
-            x: rightX,
-            y: yPosition,
-            size: TYPOGRAPHY.body.size,
-            font: font,
-            color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
-          })
-          waitingForDateAfterCompany = false
-          waitingForDateAfterUniversity = false
-        } else {
-          // Left-align for other cases
-          page.drawText(line, {
-            x: PAGE_CONFIG.margin.left,
-            y: yPosition,
-            size: TYPOGRAPHY.body.size,
-            font: font,
-            color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
-          })
-        }
-        yPosition -= TYPOGRAPHY.body.lineHeight + SPACING.paragraphSpacing
+        yPosition -= TYPOGRAPHY.body.lineHeight + SPACING.betweenEntries
         i++
         continue
       }
 
-      // ===== BULLET POINTS =====
+      // ===== BULLET POINTS (with proper indentation) =====
       if (line.startsWith('•')) {
         const bulletText = line.substring(1).trim()
         if (bulletText) {
-          // Draw bullet character
+          // Draw bullet character at left indent position
+          const bulletX = PAGE_CONFIG.margin.left + SPACING.bulletLeftIndent - font.widthOfTextAtSize('•', TYPOGRAPHY.bullet.size)
           page.drawText(FORMATTING.bulletStyle.character, {
-            x: PAGE_CONFIG.margin.left,
+            x: bulletX,
             y: yPosition,
             size: TYPOGRAPHY.bullet.size,
             font: font,
             color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
           })
           
-          // Draw text with word wrapping
+          // Draw text with word wrapping and hanging indent
           const words = bulletText.split(' ')
           let currentLine = ''
-          let xOffset = PAGE_CONFIG.margin.left + SPACING.bulletIndent
+          let xOffset = PAGE_CONFIG.margin.left + SPACING.bulletLeftIndent
           let currentY = yPosition
           
           for (const word of words) {
             const testLine = currentLine ? `${currentLine} ${word}` : word
             const textWidth = font.widthOfTextAtSize(testLine, TYPOGRAPHY.bullet.size)
             
-            if (textWidth > maxWidth - SPACING.bulletIndent && currentLine) {
+            if (textWidth > maxWidth - SPACING.bulletLeftIndent && currentLine) {
               // Draw current line and start new one
               page.drawText(currentLine, {
                 x: xOffset,
@@ -579,7 +454,7 @@ export async function generatePDF(textContent: string) {
                 font: font,
                 color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
               })
-              currentY -= TYPOGRAPHY.bullet.size + 2
+              currentY -= TYPOGRAPHY.bullet.size * 1.1 // Line spacing 1.1
               currentLine = word
               
               if (currentY < minY) {
@@ -600,7 +475,7 @@ export async function generatePDF(textContent: string) {
             })
           }
           
-          yPosition = currentY - TYPOGRAPHY.bullet.size - SPACING.betweenBullets - 1
+          yPosition = currentY - TYPOGRAPHY.bullet.size * 1.1 - SPACING.betweenBullets
         } else {
           yPosition -= TYPOGRAPHY.body.lineHeight / 2
         }
@@ -608,12 +483,11 @@ export async function generatePDF(textContent: string) {
         continue
       }
 
-      // ===== REGULAR TEXT (with word wrapping and justification for summary) =====
+      // ===== REGULAR TEXT (with word wrapping) =====
       if (line) {
         const words = line.split(' ').filter(w => w.length > 0)
         let currentLineWords: string[] = []
         let currentY = yPosition
-        const isSummaryParagraph = currentSection === 'PROFESSIONAL SUMMARY'
         
         for (const word of words) {
           const testLine = currentLineWords.length > 0 
@@ -623,39 +497,13 @@ export async function generatePDF(textContent: string) {
           
           if (textWidth > maxWidth && currentLineWords.length > 0) {
             // Draw current line
-            if (isSummaryParagraph && currentLineWords.length > 1) {
-              // Justify text for summary paragraphs
-              const lineText = currentLineWords.join(' ')
-              const lineWidth = font.widthOfTextAtSize(lineText, TYPOGRAPHY.body.size)
-              const totalSpaces = currentLineWords.length - 1
-              const extraSpace = (maxWidth - lineWidth) / totalSpaces
-              
-              let xPos = PAGE_CONFIG.margin.left
-              for (let wIdx = 0; wIdx < currentLineWords.length; wIdx++) {
-                const word = currentLineWords[wIdx]
-                page.drawText(word, {
-                  x: xPos,
-                  y: currentY,
-                  size: TYPOGRAPHY.body.size,
-                  font: font,
-                  color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
-                })
-                xPos += font.widthOfTextAtSize(word, TYPOGRAPHY.body.size)
-                if (wIdx < currentLineWords.length - 1) {
-                  const spaceWidth = font.widthOfTextAtSize(' ', TYPOGRAPHY.body.size) + extraSpace
-                  xPos += spaceWidth
-                }
-              }
-            } else {
-              // Left-align for non-summary text
-              page.drawText(currentLineWords.join(' '), {
-                x: PAGE_CONFIG.margin.left,
-                y: currentY,
-                size: TYPOGRAPHY.body.size,
-                font: font,
-                color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
-              })
-            }
+            page.drawText(currentLineWords.join(' '), {
+              x: PAGE_CONFIG.margin.left,
+              y: currentY,
+              size: TYPOGRAPHY.body.size,
+              font: font,
+              color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
+            })
             
             currentY -= TYPOGRAPHY.body.lineHeight
             currentLineWords = [word]
@@ -670,42 +518,17 @@ export async function generatePDF(textContent: string) {
         
         // Draw remaining line
         if (currentLineWords.length > 0) {
-          if (isSummaryParagraph && currentLineWords.length > 1) {
-            // Justify last line too if it's summary
-            const lineText = currentLineWords.join(' ')
-            const lineWidth = font.widthOfTextAtSize(lineText, TYPOGRAPHY.body.size)
-            const totalSpaces = currentLineWords.length - 1
-            const extraSpace = totalSpaces > 0 ? (maxWidth - lineWidth) / totalSpaces : 0
-            
-            let xPos = PAGE_CONFIG.margin.left
-            for (let wIdx = 0; wIdx < currentLineWords.length; wIdx++) {
-              const word = currentLineWords[wIdx]
-              page.drawText(word, {
-                x: xPos,
-                y: currentY,
-                size: TYPOGRAPHY.body.size,
-                font: font,
-                color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
-              })
-              xPos += font.widthOfTextAtSize(word, TYPOGRAPHY.body.size)
-              if (wIdx < currentLineWords.length - 1) {
-                const spaceWidth = font.widthOfTextAtSize(' ', TYPOGRAPHY.body.size) + extraSpace
-                xPos += spaceWidth
-              }
-            }
-          } else {
-            // Left-align for non-summary text
-            page.drawText(currentLineWords.join(' '), {
-              x: PAGE_CONFIG.margin.left,
-              y: currentY,
-              size: TYPOGRAPHY.body.size,
-              font: font,
-              color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
-            })
-          }
+          page.drawText(currentLineWords.join(' '), {
+            x: PAGE_CONFIG.margin.left,
+            y: currentY,
+            size: TYPOGRAPHY.body.size,
+            font: font,
+            color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
+          })
         }
         
         yPosition = currentY - TYPOGRAPHY.body.lineHeight - SPACING.paragraphSpacing
+        isFirstLine = false
       }
 
       i++
@@ -771,3 +594,4 @@ export async function previewPDF(textContent: string) {
     })
   }
 }
+
