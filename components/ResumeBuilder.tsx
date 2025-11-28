@@ -710,20 +710,41 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             }
           }
 
-          // Populate skills
+          // Populate skills - filter and clean to match manual entry format
           if (data.skills && data.skills.length > 0) {
             const formattedSkills: any[] = []
             data.skills.forEach((skillGroup: any) => {
               if (skillGroup.items && Array.isArray(skillGroup.items)) {
                 skillGroup.items.forEach((item: string) => {
-                  formattedSkills.push({
-                    category: skillGroup.category || 'others',
-                    skill_name: item
-                  })
+                  // Clean and validate skill items
+                  const cleanedItem = (item || '').trim()
+                  
+                  // Filter out invalid skills (too long, contains sentences, achievements, etc.)
+                  if (cleanedItem.length > 0 && 
+                      cleanedItem.length < 50 && 
+                      !cleanedItem.match(/^\d+%/) && // Not percentages
+                      !cleanedItem.match(/^(reduced|improved|delivered|successfully|implemented|enhanced|published|built|maintain)/i) && // Not achievement verbs
+                      !cleanedItem.match(/[.!?]$/) && // Not sentences ending with punctuation
+                      !cleanedItem.match(/^[A-Z][a-z]+ [A-Z]/) && // Not proper nouns (company names)
+                      cleanedItem.split(' ').length < 5) { // Not long phrases
+                    
+                    formattedSkills.push({
+                      category: skillGroup.category || 'others',
+                      skill_name: cleanedItem
+                    })
+                  }
                 })
               }
             })
-            setSkills(formattedSkills)
+            
+            // Remove duplicates
+            const uniqueSkills = formattedSkills.filter((skill, index, self) => 
+              index === self.findIndex((s) => s.category === skill.category && s.skill_name === skill.skill_name)
+            )
+            
+            if (uniqueSkills.length > 0) {
+              setSkills(uniqueSkills)
+            }
           }
 
           // Populate projects

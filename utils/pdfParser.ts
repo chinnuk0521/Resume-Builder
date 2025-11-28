@@ -652,7 +652,20 @@ function extractSkills(text: string, lowerText: string, lines: string[]): Parsed
     return []
   }
   
-  const skillSection = text.substring(skillStartIndex, skillStartIndex + 2000)
+  // Find the end of skills section by looking for next major section
+  const nextSectionKeywords = ['experience', 'education', 'projects', 'achievements', 'certifications', 'work experience', 'professional experience']
+  let skillEndIndex = text.length
+  for (const keyword of nextSectionKeywords) {
+    const index = lowerText.indexOf(keyword, skillStartIndex)
+    if (index !== -1 && index < skillEndIndex) {
+      skillEndIndex = index
+    }
+  }
+  
+  // Limit to reasonable size (max 1500 chars for skills section)
+  const maxSkillSectionSize = 1500
+  const actualEndIndex = Math.min(skillStartIndex + maxSkillSectionSize, skillEndIndex)
+  const skillSection = text.substring(skillStartIndex, actualEndIndex)
   const skillLines = skillSection.split('\n').map(l => l.trim()).filter(l => l.length > 0)
   
   // Common skill categories
@@ -664,50 +677,124 @@ function extractSkills(text: string, lowerText: string, lines: string[]): Parsed
     others: []
   }
   
-  // Common skill keywords
-  const programmingKeywords = ['javascript', 'python', 'java', 'c++', 'c#', 'typescript', 'react', 'node', 'angular', 'vue', 'php', 'ruby', 'go', 'rust', 'swift', 'kotlin']
-  const toolKeywords = ['git', 'docker', 'kubernetes', 'jenkins', 'jira', 'confluence', 'figma', 'postman', 'vscode', 'eclipse']
-  const databaseKeywords = ['mysql', 'postgresql', 'mongodb', 'redis', 'oracle', 'sql server', 'dynamodb', 'cassandra']
-  const cloudKeywords = ['aws', 'azure', 'gcp', 'google cloud', 'heroku', 'vercel', 'netlify']
+  // Common skill keywords (expanded list)
+  const programmingKeywords = ['javascript', 'python', 'java', 'c++', 'c#', 'typescript', 'react', 'node', 'angular', 'vue', 'php', 'ruby', 'go', 'rust', 'swift', 'kotlin', 'html', 'css', 'sql', 'solidity', 'webassembly']
+  const toolKeywords = ['git', 'docker', 'kubernetes', 'jenkins', 'jira', 'confluence', 'figma', 'postman', 'vscode', 'eclipse', 'postman', 'bitbucket', 'sourcetree', 'beyond compare', 'project idx']
+  const databaseKeywords = ['mysql', 'postgresql', 'mongodb', 'redis', 'oracle', 'sql server', 'dynamodb', 'cassandra', 'sql']
+  const cloudKeywords = ['aws', 'azure', 'gcp', 'google cloud', 'heroku', 'vercel', 'netlify', 'codepipeline']
+  
+  // Category label patterns
+  const categoryPatterns: { [key: string]: RegExp } = {
+    programming: /^[•\-\*]?\s*programming[:\s]*/i,
+    tools: /^[•\-\*]?\s*tools?[:\s]*/i,
+    databases: /^[•\-\*]?\s*database[:\s]*/i,
+    cloud: /^[•\-\*]?\s*cloud[:\s]*/i,
+    others: /^[•\-\*]?\s*others?[:\s]*/i
+  }
+  
+  let currentCategory = ''
   
   for (const line of skillLines) {
     const lowerLine = line.toLowerCase()
     
-    // Skip if it's a section header
-    if (line.match(/^(experience|education|projects|achievements|certifications)/i)) {
+    // Stop if we hit a major section header (all caps or title case)
+    if (line.match(/^(EXPERIENCE|EDUCATION|PROJECTS|ACHIEVEMENTS|CERTIFICATIONS|WORK EXPERIENCE|PROFESSIONAL EXPERIENCE|SUMMARY|PROFESSIONAL SUMMARY)/i)) {
       break
     }
     
-    // Extract skills from bullets or comma-separated lists
-    const skillItems = line
-      .replace(/^[•\-\*]\s+/, '')
-      .split(/[,;|]/)
-      .map(s => s.trim())
-      .filter(s => s.length > 0)
+    // Skip long lines that are clearly not skills (likely achievements or descriptions)
+    if (line.length > 100) {
+      continue
+    }
     
-    for (const item of skillItems) {
-      const lowerItem = item.toLowerCase()
+    // Check if this line is a category label
+    let foundCategory = false
+    for (const [cat, pattern] of Object.entries(categoryPatterns)) {
+      if (pattern.test(line)) {
+        currentCategory = cat
+        foundCategory = true
+        // Extract skills from the same line after the category label
+        const skillsAfterLabel = line.replace(pattern, '').trim()
+        if (skillsAfterLabel.length > 0) {
+          const items = skillsAfterLabel.split(/[,;|]/).map(s => s.trim()).filter(s => s.length > 0 && s.length < 50)
+          items.forEach(item => {
+            if (item.length > 1 && item.length < 50) {
+              categories[cat].push(item)
+            }
+          })
+        }
+        break
+      }
+    }
+    
+    if (foundCategory) {
+      continue
+    }
+    
+    // If we have a current category, try to extract skills from this line
+    if (currentCategory) {
+      const skillItems = line
+        .replace(/^[•\-\*]\s+/, '')
+        .replace(/^[a-z]+:\s*/i, '') // Remove category prefix if present
+        .split(/[,;|]/)
+        .map(s => s.trim())
+        .filter(s => s.length > 0 && s.length < 50) // Filter out long items
       
-      if (programmingKeywords.some(k => lowerItem.includes(k))) {
-        categories.programming.push(item)
-      } else if (toolKeywords.some(k => lowerItem.includes(k))) {
-        categories.tools.push(item)
-      } else if (databaseKeywords.some(k => lowerItem.includes(k))) {
-        categories.databases.push(item)
-      } else if (cloudKeywords.some(k => lowerItem.includes(k))) {
-        categories.cloud.push(item)
-      } else if (item.length > 2) {
-        categories.others.push(item)
+      for (const item of skillItems) {
+        if (item.length > 1 && item.length < 50) {
+          categories[currentCategory].push(item)
+        }
+      }
+    } else {
+      // No current category, try to auto-detect from content
+      const skillItems = line
+        .replace(/^[•\-\*]\s+/, '')
+        .split(/[,;|]/)
+        .map(s => s.trim())
+        .filter(s => s.length > 0 && s.length < 50)
+      
+      for (const item of skillItems) {
+        const lowerItem = item.toLowerCase()
+        
+        // Skip items that look like achievements or descriptions
+        if (item.length > 30 || item.match(/\d+%|reduced|improved|delivered|successfully|implemented/i)) {
+          continue
+        }
+        
+        if (programmingKeywords.some(k => lowerItem.includes(k))) {
+          categories.programming.push(item)
+        } else if (toolKeywords.some(k => lowerItem.includes(k))) {
+          categories.tools.push(item)
+        } else if (databaseKeywords.some(k => lowerItem.includes(k))) {
+          categories.databases.push(item)
+        } else if (cloudKeywords.some(k => lowerItem.includes(k))) {
+          categories.cloud.push(item)
+        } else if (item.length > 2 && item.length < 30) {
+          // Only add to others if it's short and doesn't look like a sentence
+          if (!item.match(/[.!?]$/) && !item.includes(' ')) {
+            categories.others.push(item)
+          }
+        }
       }
     }
   }
   
-  // Convert to array format
+  // Convert to array format and clean up
   Object.keys(categories).forEach(category => {
-    if (categories[category].length > 0) {
+    const uniqueItems = Array.from(new Set(categories[category]))
+      .filter(item => {
+        // Filter out items that are clearly not skills
+        return item.length > 1 && 
+               item.length < 50 && 
+               !item.match(/^\d+%/) && // Not percentages
+               !item.match(/^(reduced|improved|delivered|successfully|implemented)/i) && // Not achievement verbs
+               !item.match(/^[A-Z][a-z]+ [A-Z]/) // Not proper nouns (likely company names)
+      })
+    
+    if (uniqueItems.length > 0) {
       skills.push({
         category,
-        items: Array.from(new Set(categories[category])) // Remove duplicates
+        items: uniqueItems
       })
     }
   })
