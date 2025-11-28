@@ -986,14 +986,19 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
       </div>
 
       {/* Form Content */}
-      <div className="p-6 max-h-[calc(100vh-280px)] overflow-y-auto">
+      <div className="p-6 md:p-8 max-h-[calc(100vh-280px)] overflow-y-auto">
         {/* Personal Info Section */}
         {activeSection === 'personal' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-start">
-              <div className="border-l-4 border-gray-900 pl-4 flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">Contact Information</h3>
-                <p className="text-sm text-gray-600">Your basic contact details</p>
+          <div className="space-y-8">
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-1 h-8 bg-gradient-to-b from-gray-900 to-gray-700 rounded-full"></div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Contact Information</h3>
+                    <p className="text-sm text-gray-500 mt-0.5">Your basic contact details</p>
+                  </div>
+                </div>
               </div>
               <div className="flex gap-2">
                 <button
@@ -1016,73 +1021,76 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             </div>
 
             {showTips.personal && (
-              <div className="bg-blue-50/80 border border-blue-200/50 rounded-lg p-3.5 mb-4">
-                <h4 className="font-semibold text-blue-900 mb-1.5 text-sm">💡 Tips</h4>
-                <ul className="space-y-1 text-xs text-blue-800">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 border-2 border-blue-200 rounded-xl p-4 mb-5 shadow-sm">
+                <h4 className="font-bold text-blue-900 mb-2.5 text-sm">💡 Tips</h4>
+                <ul className="space-y-1.5 text-xs text-blue-800">
                   {sectionTips.personal.map((tip, idx) => (
-                    <li key={idx}>• {tip}</li>
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-blue-600 mt-0.5">•</span>
+                      <span>{tip}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
             )}
 
             {!formData.first_name && !formData.last_name && !formData.email && (
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 border-2 border-dashed border-gray-300 rounded-xl p-8 text-center">
-                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <HiOutlineUser className="w-8 h-8 text-gray-400" />
+              <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-10 text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                  <HiOutlineUser className="w-10 h-10 text-gray-500" />
                 </div>
-                <p className="text-gray-700 mb-1.5 font-semibold">Start building your resume</p>
+                <p className="text-gray-800 mb-1.5 font-semibold text-base">Start building your resume</p>
                 <p className="text-sm text-gray-500">Add your contact information to get started</p>
               </div>
             )}
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">First Name *</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">First Name <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   value={formData.first_name}
                   onChange={(e) => updateFormData('first_name', e.target.value.trim().substring(0, 50))}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm bg-white hover:border-gray-300"
                   placeholder="John"
                   maxLength={50}
                 />
               </div>
-              <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">Middle Name</label>
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">Middle Name</label>
                 <input
                   type="text"
                   value={formData.middle_name}
                   onChange={(e) => updateFormData('middle_name', e.target.value.trim().substring(0, 50))}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm bg-white hover:border-gray-300"
                   placeholder="Michael (optional)"
                   maxLength={50}
                 />
               </div>
-              <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">Last Name *</label>
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">Last Name <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   value={formData.last_name}
                   onChange={(e) => updateFormData('last_name', e.target.value.trim().substring(0, 50))}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm bg-white hover:border-gray-300"
                   placeholder="Doe"
                   maxLength={50}
                 />
               </div>
-              <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">Email *</label>
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">Email <span className="text-red-500">*</span></label>
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => updateFormData('email', e.target.value.trim().toLowerCase().substring(0, 100))}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm bg-white hover:border-gray-300"
                   placeholder="john@example.com"
                   maxLength={100}
                 />
               </div>
-              <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">Phone</label>
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">Phone</label>
                 <input
                   type="tel"
                   value={formData.phone}
@@ -1091,13 +1099,13 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                     const value = e.target.value.replace(/[^\d\s\+\-\(\)]/g, '').substring(0, 20)
                     updateFormData('phone', value)
                   }}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm bg-white hover:border-gray-300"
                   placeholder="+1 234 567 8900"
                   maxLength={20}
                 />
               </div>
-              <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">LinkedIn</label>
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">LinkedIn</label>
                 <input
                   type="text"
                   value={formData.linkedin}
@@ -1113,12 +1121,12 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                     }
                     updateFormData('linkedin', value)
                   }}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm bg-white hover:border-gray-300"
                   placeholder="linkedin.com/in/johndoe or just johndoe"
                 />
               </div>
-              <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">GitHub</label>
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">GitHub</label>
                 <input
                   type="text"
                   value={formData.github}
@@ -1134,12 +1142,12 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                     }
                     updateFormData('github', value)
                   }}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm bg-white hover:border-gray-300"
                   placeholder="github.com/johndoe or just johndoe"
                 />
               </div>
-              <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">Portfolio</label>
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">Portfolio</label>
                 <input
                   type="text"
                   value={formData.portfolio}
@@ -1151,7 +1159,7 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                     }
                     updateFormData('portfolio', value)
                   }}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm bg-white hover:border-gray-300"
                   placeholder="johndoe.com or www.johndoe.com"
                 />
               </div>
@@ -1161,11 +1169,16 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
 
         {/* Summary Section */}
         {activeSection === 'summary' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-start">
-              <div className="border-l-4 border-gray-900 pl-4 flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">Professional Summary</h3>
-                <p className="text-sm text-gray-600">Write a brief summary of your professional experience</p>
+          <div className="space-y-8">
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-1 h-8 bg-gradient-to-b from-gray-900 to-gray-700 rounded-full"></div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Professional Summary</h3>
+                    <p className="text-sm text-gray-500 mt-0.5">Write a brief summary of your professional experience</p>
+                  </div>
+                </div>
               </div>
               <div className="flex gap-2">
                 <button
@@ -1198,25 +1211,30 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             </div>
 
             {showTips.summary && (
-              <div className="bg-blue-50/80 border border-blue-200/50 rounded-lg p-3.5 mb-4">
-                <h4 className="font-semibold text-blue-900 mb-1.5 text-sm">💡 Tips</h4>
-                <ul className="space-y-1 text-xs text-blue-800">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 border-2 border-blue-200 rounded-xl p-4 mb-5 shadow-sm">
+                <h4 className="font-bold text-blue-900 mb-2.5 text-sm">💡 Tips</h4>
+                <ul className="space-y-1.5 text-xs text-blue-800">
                   {sectionTips.summary.map((tip, idx) => (
-                    <li key={idx}>• {tip}</li>
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-blue-600 mt-0.5">•</span>
+                      <span>{tip}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
             )}
 
             {!formData.professional_summary && (
-              <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                <HiOutlineDocumentText className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600 mb-2 font-medium">No summary yet</p>
-                <p className="text-sm text-gray-500 mb-4">Write a compelling summary or generate one from your experience</p>
+              <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-10 text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                  <HiOutlineDocumentText className="w-10 h-10 text-gray-500" />
+                </div>
+                <p className="text-gray-800 mb-1.5 font-semibold text-base">No summary yet</p>
+                <p className="text-sm text-gray-500 mb-5">Write a compelling summary or generate one from your experience</p>
                 {experiences.length > 0 && (
                   <button
                     onClick={generateSummary}
-                    className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium transition-colors"
+                    className="px-5 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-semibold transition-colors shadow-sm"
                   >
                     Generate Summary from Experience
                   </button>
@@ -1225,7 +1243,7 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             )}
 
             {formData.professional_summary && (
-              <>
+              <div className="space-y-3">
                 <textarea
                   value={formData.professional_summary}
                   onChange={(e) => {
@@ -1236,28 +1254,33 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                     }
                   }}
                   rows={8}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all resize-none text-sm"
+                  className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all resize-none text-sm bg-white hover:border-gray-300"
                   placeholder="Experienced software engineer with 5+ years of expertise in full-stack development..."
                   maxLength={1000}
                 />
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-500">{formData.professional_summary.length} / 1000 characters</span>
+                <div className="flex justify-between items-center text-xs px-1">
+                  <span className="text-gray-500 font-medium">{formData.professional_summary.length} / 1000 characters</span>
                   {formData.professional_summary.length > 800 && (
-                    <span className="text-orange-600">Consider shortening for better readability</span>
+                    <span className="text-orange-600 font-medium">Consider shortening for better readability</span>
                   )}
                 </div>
-              </>
+              </div>
             )}
           </div>
         )}
 
         {/* Experience Section */}
         {activeSection === 'experience' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-start">
-              <div className="border-l-4 border-gray-900 pl-4 flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">Work Experience</h3>
-                <p className="text-sm text-gray-600">Add your work history in reverse chronological order</p>
+          <div className="space-y-8">
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-1 h-8 bg-gradient-to-b from-gray-900 to-gray-700 rounded-full"></div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Work Experience</h3>
+                    <p className="text-sm text-gray-500 mt-0.5">Add your work history in reverse chronological order</p>
+                  </div>
+                </div>
               </div>
               <div className="flex gap-2">
                 <button
@@ -1280,39 +1303,44 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             </div>
 
             {showTips.experience && (
-              <div className="bg-blue-50/80 border border-blue-200/50 rounded-lg p-3.5 mb-4">
-                <h4 className="font-semibold text-blue-900 mb-1.5 text-sm">💡 Tips</h4>
-                <ul className="space-y-1 text-xs text-blue-800">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 border-2 border-blue-200 rounded-xl p-4 mb-5 shadow-sm">
+                <h4 className="font-bold text-blue-900 mb-2.5 text-sm">💡 Tips</h4>
+                <ul className="space-y-1.5 text-xs text-blue-800">
                   {sectionTips.experience.map((tip, idx) => (
-                    <li key={idx}>• {tip}</li>
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-blue-600 mt-0.5">•</span>
+                      <span>{tip}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
             )}
 
             {experiences.length === 0 && (
-              <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                <HiOutlineBriefcase className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600 mb-2 font-medium">No work experience added yet</p>
-                <p className="text-sm text-gray-500 mb-4">Add your first work experience to showcase your career</p>
+              <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-10 text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                  <HiOutlineBriefcase className="w-10 h-10 text-gray-500" />
+                </div>
+                <p className="text-gray-800 mb-1.5 font-semibold text-base">No work experience added yet</p>
+                <p className="text-sm text-gray-500 mb-5">Add your first work experience to showcase your career</p>
                 <button
                   onClick={() => setExperiences([{ job_title: '', company: '', start_date: '', end_date: '', bullets: [] }])}
-                  className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium transition-colors"
+                  className="px-5 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-semibold transition-colors shadow-sm"
                 >
                   Add First Experience
                 </button>
               </div>
             )}
             
-            <div className="space-y-5">
+            <div className="space-y-6">
               {experiences.map((exp, idx) => (
-                <div key={idx} className="border border-gray-200 rounded-lg p-4 bg-gray-50/50 hover:bg-gray-100/50 transition-colors">
-                  <div className="flex justify-between items-start mb-4">
-                    <h4 className="font-semibold text-gray-800">Experience #{idx + 1}</h4>
+                <div key={idx} className="border-2 border-gray-200 rounded-xl p-6 bg-white hover:border-gray-300 hover:shadow-md transition-all shadow-sm">
+                  <div className="flex justify-between items-start mb-5">
+                    <h4 className="font-bold text-gray-900 text-base">Experience #{idx + 1}</h4>
                     <div className="flex gap-2">
                       <button
                         onClick={() => duplicateExperience(idx)}
-                        className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition-colors"
+                        className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
                         title="Duplicate this experience"
                       >
                         <HiOutlineSquare2Stack className="w-4 h-4" />
@@ -1326,9 +1354,9 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                       </button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Job Title *</label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700">Job Title <span className="text-red-500">*</span></label>
                       <input
                         type="text"
                         value={exp.job_title || ''}
@@ -1337,13 +1365,13 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                           newExp[idx] = { ...newExp[idx], job_title: e.target.value }
                           setExperiences(newExp)
                         }}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm bg-white hover:border-gray-300"
                         placeholder="Software Engineer"
                         maxLength={100}
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Company *</label>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700">Company <span className="text-red-500">*</span></label>
                       <input
                         type="text"
                         value={exp.company || ''}
@@ -1352,13 +1380,13 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                           newExp[idx] = { ...newExp[idx], company: e.target.value.trim().substring(0, 100) }
                           setExperiences(newExp)
                         }}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm bg-white hover:border-gray-300"
                         placeholder="Tech Corp"
                         maxLength={100}
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700">Start Date <span className="text-red-500">*</span></label>
                       <input
                         type="text"
                         value={exp.start_date || ''}
@@ -1367,12 +1395,12 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                           newExp[idx] = { ...newExp[idx], start_date: e.target.value }
                           setExperiences(newExp)
                         }}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
-                      placeholder="Jan 2020 or 2020-01"
-                    />
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm bg-white hover:border-gray-300"
+                        placeholder="Jan 2020 or 2020-01"
+                      />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700">End Date</label>
                       <input
                         type="text"
                         value={exp.end_date || ''}
@@ -1381,14 +1409,14 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                           newExp[idx] = { ...newExp[idx], end_date: e.target.value.trim() }
                           setExperiences(newExp)
                         }}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm bg-white hover:border-gray-300"
                         placeholder="Present, Dec 2023, or 2023-12"
                       />
                       <p className="text-xs text-gray-500 mt-1">Leave empty or enter "Present" for current role</p>
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Achievements & Responsibilities (one per line)</label>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700">Achievements & Responsibilities <span className="text-gray-500 font-normal">(one per line)</span></label>
                     <textarea
                       value={Array.isArray(exp.bullets) ? exp.bullets.join('\n') : (typeof exp.bullets === 'string' ? exp.bullets : '')}
                       onChange={(e) => {
@@ -1399,18 +1427,18 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                         newExp[idx] = { ...newExp[idx], bullets: bullets.length > 0 ? bullets : [] }
                         setExperiences(newExp)
                       }}
-                      rows={4}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all resize-none text-sm"
+                      rows={5}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all resize-none text-sm bg-white hover:border-gray-300"
                       placeholder="Developed and maintained web applications&#10;Led a team of 5 developers"
                     />
-                    <p className="text-xs text-gray-500 mt-1">Enter each achievement or responsibility on a new line</p>
+                    <p className="text-xs text-gray-500">Enter each achievement or responsibility on a new line</p>
                   </div>
                 </div>
               ))}
               {experiences.length > 0 && (
                 <button
                   onClick={() => setExperiences([...experiences, { job_title: '', company: '', start_date: '', end_date: '', bullets: [] }])}
-                  className="w-full py-2.5 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-900 hover:text-gray-900 hover:bg-gray-50 transition-all font-medium text-sm"
+                  className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-900 hover:text-gray-900 hover:bg-gray-50 transition-all font-semibold text-sm"
                 >
                   + Add Another Experience
                 </button>
@@ -1421,11 +1449,16 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
 
         {/* Education Section */}
         {activeSection === 'education' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-start">
-              <div className="border-l-4 border-gray-900 pl-4 flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">Education</h3>
-                <p className="text-sm text-gray-600">Add your educational background</p>
+          <div className="space-y-8">
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-1 h-8 bg-gradient-to-b from-gray-900 to-gray-700 rounded-full"></div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Education</h3>
+                    <p className="text-sm text-gray-500 mt-0.5">Add your educational background</p>
+                  </div>
+                </div>
               </div>
               <div className="flex gap-2">
                 <button
@@ -1448,75 +1481,80 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             </div>
 
             {showTips.education && (
-              <div className="bg-blue-50/80 border border-blue-200/50 rounded-lg p-3.5 mb-4">
-                <h4 className="font-semibold text-blue-900 mb-1.5 text-sm">💡 Tips</h4>
-                <ul className="space-y-1 text-xs text-blue-800">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 border-2 border-blue-200 rounded-xl p-4 mb-5 shadow-sm">
+                <h4 className="font-bold text-blue-900 mb-2.5 text-sm">💡 Tips</h4>
+                <ul className="space-y-1.5 text-xs text-blue-800">
                   {sectionTips.education.map((tip, idx) => (
-                    <li key={idx}>• {tip}</li>
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-blue-600 mt-0.5">•</span>
+                      <span>{tip}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
             )}
 
             {education.length === 0 && (
-              <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                <HiOutlineAcademicCap className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600 mb-2 font-medium">No education added yet</p>
-                <p className="text-sm text-gray-500 mb-4">Add your educational qualifications</p>
+              <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-10 text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                  <HiOutlineAcademicCap className="w-10 h-10 text-gray-500" />
+                </div>
+                <p className="text-gray-800 mb-1.5 font-semibold text-base">No education added yet</p>
+                <p className="text-sm text-gray-500 mb-5">Add your educational qualifications</p>
                 <button
-                  onClick={() => setEducation([{ degree: '', university: '', years: '', location: '' }])}
-                  className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium transition-colors"
+                  onClick={() => setEducation([{ course: '', school: '', years: '', location: '', start_year: '', end_year: '' }])}
+                  className="px-5 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-semibold transition-colors shadow-sm"
                 >
                   Add Education
                 </button>
               </div>
             )}
             
-            <div className="space-y-5">
+            <div className="space-y-6">
               {education.map((edu, idx) => (
-                <div key={idx} className="border border-gray-200 rounded-lg p-4 bg-gray-50/50 hover:bg-gray-100/50 transition-colors">
-                  <div className="flex justify-between items-start mb-4">
-                    <h4 className="font-semibold text-gray-800">Education #{idx + 1}</h4>
+                <div key={idx} className="border-2 border-gray-200 rounded-xl p-6 bg-white hover:border-gray-300 hover:shadow-md transition-all shadow-sm">
+                  <div className="flex justify-between items-start mb-5">
+                    <h4 className="font-bold text-gray-900 text-base">Education #{idx + 1}</h4>
                     <button
                       onClick={() => setEducation(education.filter((_, i) => i !== idx))}
-                      className="text-red-600 hover:text-red-800 text-sm font-medium"
+                      className="px-3 py-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg text-sm font-semibold transition-colors"
                     >
                       Remove
                     </button>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Degree *</label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700">Degree <span className="text-red-500">*</span></label>
                       <input
                         type="text"
-                        value={edu.degree || ''}
+                        value={edu.course || edu.degree || ''}
                         onChange={(e) => {
                           const newEdu = [...education]
-                          newEdu[idx] = { ...newEdu[idx], degree: e.target.value.trim().substring(0, 100) }
+                          newEdu[idx] = { ...newEdu[idx], course: e.target.value.trim().substring(0, 100), degree: e.target.value.trim().substring(0, 100) }
                           setEducation(newEdu)
                         }}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm bg-white hover:border-gray-300"
                         placeholder="B.S. Computer Science"
                         maxLength={100}
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">University *</label>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700">University <span className="text-red-500">*</span></label>
                       <input
                         type="text"
-                        value={edu.university || ''}
+                        value={edu.school || edu.university || ''}
                         onChange={(e) => {
                           const newEdu = [...education]
-                          newEdu[idx] = { ...newEdu[idx], university: e.target.value.trim().substring(0, 150) }
+                          newEdu[idx] = { ...newEdu[idx], school: e.target.value.trim().substring(0, 150), university: e.target.value.trim().substring(0, 150) }
                           setEducation(newEdu)
                         }}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm bg-white hover:border-gray-300"
                         placeholder="University Name"
                         maxLength={150}
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Years</label>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700">Years</label>
                       <input
                         type="text"
                         value={edu.years || ''}
@@ -1525,12 +1563,12 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                           newEdu[idx] = { ...newEdu[idx], years: e.target.value.trim() }
                           setEducation(newEdu)
                         }}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm bg-white hover:border-gray-300"
                         placeholder="2020 - 2024 or 2020-2024"
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700">Location</label>
                       <input
                         type="text"
                         value={edu.location || ''}
@@ -1539,7 +1577,7 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                           newEdu[idx] = { ...newEdu[idx], location: e.target.value.trim() }
                           setEducation(newEdu)
                         }}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm bg-white hover:border-gray-300"
                         placeholder="City, Country"
                       />
                     </div>
@@ -1548,8 +1586,8 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
               ))}
               {education.length > 0 && (
                 <button
-                  onClick={() => setEducation([...education, { degree: '', university: '', years: '', location: '' }])}
-                  className="w-full py-2.5 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-900 hover:text-gray-900 hover:bg-gray-50 transition-all font-medium text-sm"
+                  onClick={() => setEducation([...education, { course: '', school: '', years: '', location: '', start_year: '', end_year: '' }])}
+                  className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-900 hover:text-gray-900 hover:bg-gray-50 transition-all font-semibold text-sm"
                 >
                   + Add Another Education
                 </button>
@@ -1560,11 +1598,16 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
 
         {/* Skills Section */}
         {activeSection === 'skills' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-start">
-              <div className="border-l-4 border-gray-900 pl-4 flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">Skills</h3>
-                <p className="text-sm text-gray-600">Categorize your skills for better organization</p>
+          <div className="space-y-8">
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-1 h-8 bg-gradient-to-b from-gray-900 to-gray-700 rounded-full"></div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Skills</h3>
+                    <p className="text-sm text-gray-500 mt-0.5">Categorize your skills for better organization</p>
+                  </div>
+                </div>
               </div>
               <div className="flex gap-2">
                 <button
@@ -1587,25 +1630,30 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             </div>
 
             {showTips.skills && (
-              <div className="bg-blue-50/80 border border-blue-200/50 rounded-lg p-3.5 mb-4">
-                <h4 className="font-semibold text-blue-900 mb-1.5 text-sm">💡 Tips</h4>
-                <ul className="space-y-1 text-xs text-blue-800">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 border-2 border-blue-200 rounded-xl p-4 mb-5 shadow-sm">
+                <h4 className="font-bold text-blue-900 mb-2.5 text-sm">💡 Tips</h4>
+                <ul className="space-y-1.5 text-xs text-blue-800">
                   {sectionTips.skills.map((tip, idx) => (
-                    <li key={idx}>• {tip}</li>
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-blue-600 mt-0.5">•</span>
+                      <span>{tip}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
             )}
 
             {skills.length === 0 && (
-              <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                <HiOutlineWrenchScrewdriver className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600 mb-2 font-medium">No skills added yet</p>
+              <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-10 text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                  <HiOutlineWrenchScrewdriver className="w-10 h-10 text-gray-500" />
+                </div>
+                <p className="text-gray-800 mb-1.5 font-semibold text-base">No skills added yet</p>
                 <p className="text-sm text-gray-500">Add your technical and professional skills</p>
               </div>
             )}
             
-            <div className="space-y-5">
+            <div className="space-y-6">
               {['programming', 'tools', 'databases', 'cloud', 'others'].map((category) => {
                 const categorySkills = skills.filter(s => s.category === category)
                 
@@ -1637,8 +1685,8 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                 }
                 
                 return (
-                  <div key={category} className="border border-gray-200 rounded-lg p-4 bg-gray-50/50">
-                    <label className="block text-sm font-semibold text-gray-800 mb-2 capitalize">
+                  <div key={category} className="border-2 border-gray-200 rounded-xl p-5 bg-white hover:border-gray-300 transition-all shadow-sm">
+                    <label className="block text-sm font-bold text-gray-900 mb-3 capitalize">
                       {category.replace('_', ' ')}
                     </label>
                     
@@ -1658,21 +1706,21 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                           handleAddSkill(skillInputs[category] || '')
                         }
                       }}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm bg-white hover:border-gray-300"
                       placeholder="Type a skill and press Enter to add"
                       maxLength={50}
                     />
-                    <p className="text-xs text-gray-500 mt-1.5 mb-3">
-                      Press Enter to add • {categorySkills.length} skill{categorySkills.length !== 1 ? 's' : ''} added
+                    <p className="text-xs text-gray-500 mt-2 mb-3 font-medium">
+                      Press Enter to add • <span className="font-semibold">{categorySkills.length}</span> skill{categorySkills.length !== 1 ? 's' : ''} added
                     </p>
                     
                     {/* Skills display as tags */}
                     {categorySkills.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2.5">
                         {categorySkills.map((skill, idx) => (
                           <div
                             key={idx}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white rounded-lg text-sm font-medium"
+                            className="inline-flex items-center gap-2 px-3.5 py-2 bg-gray-900 text-white rounded-lg text-sm font-semibold shadow-sm"
                           >
                             <span>{skill.skill_name}</span>
                             <button
@@ -1696,11 +1744,16 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
 
         {/* Projects Section */}
         {activeSection === 'projects' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-start">
-              <div className="border-l-4 border-gray-900 pl-4 flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">Projects</h3>
-                <p className="text-sm text-gray-600">Showcase your notable projects</p>
+          <div className="space-y-8">
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-1 h-8 bg-gradient-to-b from-gray-900 to-gray-700 rounded-full"></div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Projects</h3>
+                    <p className="text-sm text-gray-500 mt-0.5">Showcase your notable projects</p>
+                  </div>
+                </div>
               </div>
               <div className="flex gap-2">
                 <button
@@ -1723,39 +1776,44 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             </div>
 
             {showTips.projects && (
-              <div className="bg-blue-50/80 border border-blue-200/50 rounded-lg p-3.5 mb-4">
-                <h4 className="font-semibold text-blue-900 mb-1.5 text-sm">💡 Tips</h4>
-                <ul className="space-y-1 text-xs text-blue-800">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 border-2 border-blue-200 rounded-xl p-4 mb-5 shadow-sm">
+                <h4 className="font-bold text-blue-900 mb-2.5 text-sm">💡 Tips</h4>
+                <ul className="space-y-1.5 text-xs text-blue-800">
                   {sectionTips.projects.map((tip, idx) => (
-                    <li key={idx}>• {tip}</li>
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-blue-600 mt-0.5">•</span>
+                      <span>{tip}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
             )}
 
             {projects.length === 0 && (
-              <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                <HiOutlineRocketLaunch className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600 mb-2 font-medium">No projects added yet</p>
-                <p className="text-sm text-gray-500 mb-4">Showcase your notable projects and contributions</p>
+              <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-10 text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                  <HiOutlineRocketLaunch className="w-10 h-10 text-gray-500" />
+                </div>
+                <p className="text-gray-800 mb-1.5 font-semibold text-base">No projects added yet</p>
+                <p className="text-sm text-gray-500 mb-5">Showcase your notable projects and contributions</p>
                 <button
                   onClick={() => setProjects([{ title: '', description: '', contribution: '', tech_stack: '' }])}
-                  className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium transition-colors"
+                  className="px-5 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-semibold transition-colors shadow-sm"
                 >
                   Add First Project
                 </button>
               </div>
             )}
             
-            <div className="space-y-5">
+            <div className="space-y-6">
               {projects.map((proj, idx) => (
-                <div key={idx} className="border border-gray-200 rounded-lg p-4 bg-gray-50/50 hover:bg-gray-100/50 transition-colors">
-                  <div className="flex justify-between items-start mb-4">
-                    <h4 className="font-semibold text-gray-800">Project #{idx + 1}</h4>
+                <div key={idx} className="border-2 border-gray-200 rounded-xl p-6 bg-white hover:border-gray-300 hover:shadow-md transition-all shadow-sm">
+                  <div className="flex justify-between items-start mb-5">
+                    <h4 className="font-bold text-gray-900 text-base">Project #{idx + 1}</h4>
                     <div className="flex gap-2">
                       <button
                         onClick={() => setProjects([...projects.slice(0, idx + 1), { ...proj }, ...projects.slice(idx + 1)])}
-                        className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition-colors"
+                        className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
                         title="Duplicate this project"
                       >
                         <HiOutlineSquare2Stack className="w-4 h-4" />
@@ -1769,62 +1827,74 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                       </button>
                     </div>
                   </div>
-                  <div className="space-y-3">
-                    <input
-                      type="text"
-                      value={proj.title || ''}
-                      onChange={(e) => {
-                        const newProj = [...projects]
-                        newProj[idx] = { ...newProj[idx], title: e.target.value.trim().substring(0, 150) }
-                        setProjects(newProj)
-                      }}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
-                      placeholder="Project Title *"
-                      maxLength={150}
-                    />
-                    <textarea
-                      value={proj.description || ''}
-                      onChange={(e) => {
-                        const newProj = [...projects]
-                        newProj[idx] = { ...newProj[idx], description: e.target.value.substring(0, 500) }
-                        setProjects(newProj)
-                      }}
-                      rows={3}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all resize-none text-sm"
-                      placeholder="Project description and key features..."
-                      maxLength={500}
-                    />
-                    <textarea
-                      value={proj.contribution || ''}
-                      onChange={(e) => {
-                        const newProj = [...projects]
-                        newProj[idx] = { ...newProj[idx], contribution: e.target.value.substring(0, 300) }
-                        setProjects(newProj)
-                      }}
-                      rows={2}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all resize-none text-sm"
-                      placeholder="Your key contributions (optional)"
-                      maxLength={300}
-                    />
-                    <input
-                      type="text"
-                      value={proj.tech_stack || ''}
-                      onChange={(e) => {
-                        const newProj = [...projects]
-                        newProj[idx] = { ...newProj[idx], tech_stack: e.target.value.trim().substring(0, 200) }
-                        setProjects(newProj)
-                      }}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
-                      placeholder="Technologies used (e.g., React, Node.js, MongoDB)"
-                      maxLength={200}
-                    />
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700">Project Title <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        value={proj.title || ''}
+                        onChange={(e) => {
+                          const newProj = [...projects]
+                          newProj[idx] = { ...newProj[idx], title: e.target.value.trim().substring(0, 150) }
+                          setProjects(newProj)
+                        }}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm bg-white hover:border-gray-300"
+                        placeholder="Project Title"
+                        maxLength={150}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700">Description</label>
+                      <textarea
+                        value={proj.description || ''}
+                        onChange={(e) => {
+                          const newProj = [...projects]
+                          newProj[idx] = { ...newProj[idx], description: e.target.value.substring(0, 500) }
+                          setProjects(newProj)
+                        }}
+                        rows={4}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all resize-none text-sm bg-white hover:border-gray-300"
+                        placeholder="Project description and key features..."
+                        maxLength={500}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700">Your Contributions <span className="text-gray-500 font-normal">(optional)</span></label>
+                      <textarea
+                        value={proj.contribution || ''}
+                        onChange={(e) => {
+                          const newProj = [...projects]
+                          newProj[idx] = { ...newProj[idx], contribution: e.target.value.substring(0, 300) }
+                          setProjects(newProj)
+                        }}
+                        rows={3}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all resize-none text-sm bg-white hover:border-gray-300"
+                        placeholder="Your key contributions to this project"
+                        maxLength={300}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700">Technologies Used</label>
+                      <input
+                        type="text"
+                        value={proj.tech_stack || ''}
+                        onChange={(e) => {
+                          const newProj = [...projects]
+                          newProj[idx] = { ...newProj[idx], tech_stack: e.target.value.trim().substring(0, 200) }
+                          setProjects(newProj)
+                        }}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm bg-white hover:border-gray-300"
+                        placeholder="React, Node.js, MongoDB, AWS"
+                        maxLength={200}
+                      />
+                    </div>
                   </div>
                 </div>
               ))}
               {projects.length > 0 && (
                 <button
                   onClick={() => setProjects([...projects, { title: '', description: '', contribution: '', tech_stack: '' }])}
-                  className="w-full py-2.5 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-900 hover:text-gray-900 hover:bg-gray-50 transition-all font-medium text-sm"
+                  className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-900 hover:text-gray-900 hover:bg-gray-50 transition-all font-semibold text-sm"
                 >
                   + Add Another Project
                 </button>
@@ -1835,11 +1905,16 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
 
         {/* Achievements Section */}
         {activeSection === 'achievements' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-start">
-              <div className="border-l-4 border-gray-900 pl-4 flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">Achievements</h3>
-                <p className="text-sm text-gray-600">Highlight your key accomplishments</p>
+          <div className="space-y-8">
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-1 h-8 bg-gradient-to-b from-gray-900 to-gray-700 rounded-full"></div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Achievements</h3>
+                    <p className="text-sm text-gray-500 mt-0.5">Highlight your key accomplishments</p>
+                  </div>
+                </div>
               </div>
               <div className="flex gap-2">
                 <button
@@ -1862,31 +1937,36 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             </div>
 
             {showTips.achievements && (
-              <div className="bg-blue-50/80 border border-blue-200/50 rounded-lg p-3.5 mb-4">
-                <h4 className="font-semibold text-blue-900 mb-1.5 text-sm">💡 Tips</h4>
-                <ul className="space-y-1 text-xs text-blue-800">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 border-2 border-blue-200 rounded-xl p-4 mb-5 shadow-sm">
+                <h4 className="font-bold text-blue-900 mb-2.5 text-sm">💡 Tips</h4>
+                <ul className="space-y-1.5 text-xs text-blue-800">
                   {sectionTips.achievements.map((tip, idx) => (
-                    <li key={idx}>• {tip}</li>
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-blue-600 mt-0.5">•</span>
+                      <span>{tip}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
             )}
 
             {achievements.length === 0 && (
-              <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                <HiOutlineTrophy className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600 mb-2 font-medium">No achievements added yet</p>
-                <p className="text-sm text-gray-500 mb-4">Highlight your key accomplishments and recognitions</p>
+              <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-10 text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                  <HiOutlineTrophy className="w-10 h-10 text-gray-500" />
+                </div>
+                <p className="text-gray-800 mb-1.5 font-semibold text-base">No achievements added yet</p>
+                <p className="text-sm text-gray-500 mb-5">Highlight your key accomplishments and recognitions</p>
                 <button
                   onClick={() => setAchievements([''])}
-                  className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium transition-colors"
+                  className="px-5 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-semibold transition-colors shadow-sm"
                 >
                   Add First Achievement
                 </button>
               </div>
             )}
             
-            <div className="space-y-3">
+            <div className="space-y-4">
               {achievements.map((ach, idx) => {
                 // Normalize achievement value
                 const achievementValue = typeof ach === 'string' ? ach : (ach?.achievement_text || '')
@@ -1901,13 +1981,13 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                         newAch[idx] = typeof ach === 'string' ? value : { achievement_text: value }
                         setAchievements(newAch)
                       }}
-                      className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
+                      className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm bg-white hover:border-gray-300"
                       placeholder="e.g., Led team that increased revenue by 40%"
                       maxLength={200}
                     />
                     <button
                       onClick={() => setAchievements(achievements.filter((_, i) => i !== idx))}
-                      className="px-4 py-2.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium whitespace-nowrap"
+                      className="px-4 py-3 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors text-sm font-semibold whitespace-nowrap"
                       title="Remove achievement"
                     >
                       Remove
@@ -1922,7 +2002,7 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                     setAchievements([...achievements, ''])
                   }
                 }}
-                className="w-full py-2.5 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-900 hover:text-gray-900 hover:bg-gray-50 transition-all font-medium text-sm"
+                className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-900 hover:text-gray-900 hover:bg-gray-50 transition-all font-semibold text-sm"
               >
                 + Add Achievement
               </button>
@@ -1932,11 +2012,16 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
 
         {/* Certifications Section */}
         {activeSection === 'certifications' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-start">
-              <div className="border-l-4 border-gray-900 pl-4 flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">Certifications</h3>
-                <p className="text-sm text-gray-600">List your professional certifications</p>
+          <div className="space-y-8">
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-1 h-8 bg-gradient-to-b from-gray-900 to-gray-700 rounded-full"></div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Certifications</h3>
+                    <p className="text-sm text-gray-500 mt-0.5">List your professional certifications</p>
+                  </div>
+                </div>
               </div>
               <div className="flex gap-2">
                 <button
@@ -1959,31 +2044,36 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
             </div>
 
             {showTips.certifications && (
-              <div className="bg-blue-50/80 border border-blue-200/50 rounded-lg p-3.5 mb-4">
-                <h4 className="font-semibold text-blue-900 mb-1.5 text-sm">💡 Tips</h4>
-                <ul className="space-y-1 text-xs text-blue-800">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 border-2 border-blue-200 rounded-xl p-4 mb-5 shadow-sm">
+                <h4 className="font-bold text-blue-900 mb-2.5 text-sm">💡 Tips</h4>
+                <ul className="space-y-1.5 text-xs text-blue-800">
                   {sectionTips.certifications.map((tip, idx) => (
-                    <li key={idx}>• {tip}</li>
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-blue-600 mt-0.5">•</span>
+                      <span>{tip}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
             )}
 
             {certifications.length === 0 && (
-              <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                <HiOutlineDocumentCheck className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600 mb-2 font-medium">No certifications added yet</p>
-                <p className="text-sm text-gray-500 mb-4">Add your professional certifications and credentials</p>
+              <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-10 text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                  <HiOutlineDocumentCheck className="w-10 h-10 text-gray-500" />
+                </div>
+                <p className="text-gray-800 mb-1.5 font-semibold text-base">No certifications added yet</p>
+                <p className="text-sm text-gray-500 mb-5">Add your professional certifications and credentials</p>
                 <button
                   onClick={() => setCertifications([''])}
-                  className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium transition-colors"
+                  className="px-5 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-semibold transition-colors shadow-sm"
                 >
                   Add First Certification
                 </button>
               </div>
             )}
             
-            <div className="space-y-3">
+            <div className="space-y-4">
               {certifications.map((cert, idx) => {
                 // Normalize certification value
                 const certValue = typeof cert === 'string' ? cert : (cert?.certification_name || '')
@@ -1998,13 +2088,13 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                         newCert[idx] = typeof cert === 'string' ? value : { certification_name: value }
                         setCertifications(newCert)
                       }}
-                      className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm"
+                      className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-all text-sm bg-white hover:border-gray-300"
                       placeholder="e.g., AWS Certified Solutions Architect"
                       maxLength={200}
                     />
                     <button
                       onClick={() => setCertifications(certifications.filter((_, i) => i !== idx))}
-                      className="px-4 py-2.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium whitespace-nowrap"
+                      className="px-4 py-3 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors text-sm font-semibold whitespace-nowrap"
                       title="Remove certification"
                     >
                       Remove
@@ -2019,7 +2109,7 @@ export default function ResumeBuilder({ profileData, onSave, onDataChange }: Res
                     setCertifications([...certifications, ''])
                   }
                 }}
-                className="w-full py-2.5 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-900 hover:text-gray-900 hover:bg-gray-50 transition-all font-medium text-sm"
+                className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-900 hover:text-gray-900 hover:bg-gray-50 transition-all font-semibold text-sm"
               >
                 + Add Certification
               </button>
