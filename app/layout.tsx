@@ -6,6 +6,13 @@ import { AuthProvider } from '@/components/AuthProvider'
 export const metadata: Metadata = {
   title: 'Resume Builder - Professional ATS-Optimized Resumes',
   description: 'Build professional, ATS-optimized resumes that get you noticed',
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    shortcut: '/icon.svg',
+    apple: '/icon.svg',
+  },
 }
 
 export default function RootLayout({
