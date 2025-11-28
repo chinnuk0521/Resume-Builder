@@ -75,14 +75,20 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
       resume += `${contactText}${contactUrls ? `||URLS:${contactUrls}` : ''}\n\n`
     }
 
-    // Professional Summary
+    // Summary (optional, 2-3 lines max)
     if (dataToUse.profile?.professional_summary) {
-      resume += `PROFESSIONAL SUMMARY\n\n${dataToUse.profile.professional_summary}\n\n`
+      const summary = dataToUse.profile.professional_summary.trim()
+      // Limit to 2-3 lines (approximately 200-300 characters)
+      const maxLength = 300
+      const truncatedSummary = summary.length > maxLength 
+        ? summary.substring(0, maxLength).replace(/\s+\S*$/, '') + '...'
+        : summary
+      resume += `SUMMARY\n\n${truncatedSummary}\n\n`
     }
 
-    // Education - Exact format matching the PDF: | University | Location | with dates right-aligned
+    // Education - ATS-friendly format: Degree — Start – End (dates right-aligned)
     if (dataToUse.education && dataToUse.education.length > 0) {
-      resume += `## Education\n\n`
+      resume += `EDUCATION\n\n`
       dataToUse.education.forEach((edu: any) => {
         // Map fields (support both old and new format)
         const university = edu.school || edu.university || 'University'
@@ -91,29 +97,32 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
         const endYear = edu.end_year || (edu.years ? edu.years.split(/[-–—]/)[1]?.trim() || 'Present' : 'Present')
         const degree = edu.course || edu.degree || 'Degree'
         
-        // Format: | University | Location | (dates on separate line, right-aligned)
-        const dateRange = endYear && endYear !== 'Present' ? `${startYear}–${endYear}` : 
-                         startYear ? `${startYear}–Present` : ''
+        // Format: Degree — Start – End (dates will be right-aligned by PDF generator)
+        const dateRange = endYear && endYear !== 'Present' ? `${startYear} – ${endYear}` : 
+                         startYear ? `${startYear} – Present` : ''
         
-        // Format exactly like PDF: | University | Location |
-        if (location) {
-          resume += `| ${university} | ${location} |\n`
-        } else {
-          resume += `| ${university} |\n`
-        }
-        
-        // Dates on same line, right-aligned (PDF generator handles alignment)
+        // ATS-friendly format: Simple text with em dash separator
         if (dateRange) {
-          resume += `${dateRange}\n`
+          resume += `${degree} — ${dateRange}\n`
+        } else {
+          resume += `${degree}\n`
         }
         
-        resume += `${degree}\n\n`
+        // University name on next line (bold in PDF)
+        resume += `${university}\n`
+        
+        // Location on next line if present
+        if (location) {
+          resume += `${location}\n`
+        }
+        
+        resume += `\n`
       })
     }
 
-    // Work Experience - Exact format matching the PDF: | Job Title | with dates right-aligned
+    // Work Experience - ATS-friendly format: Job Title — Start – End (dates right-aligned)
     if (dataToUse.experiences && dataToUse.experiences.length > 0) {
-      resume += `WORK EXPERIENCE\n\n`
+      resume += `EXPERIENCE\n\n`
       dataToUse.experiences.forEach((exp: any) => {
         // Map fields (support both old and new format)
         const jobTitle = exp.job_title || 'Job Title'
@@ -122,23 +131,24 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
         const company = exp.company || 'Company'
         const achievements = exp.achievements || exp.bullets || []
         
-        // Format: | Job Title | with dates right-aligned on same line (exact PDF format)
-        const dateRange = endYear && endYear !== 'Present' ? `${startYear}–${endYear}` : 
-                         startYear ? `${startYear}–Present` : ''
+        // Format: Job Title — Start – End (dates will be right-aligned by PDF generator)
+        const dateRange = endYear && endYear !== 'Present' ? `${startYear} – ${endYear}` : 
+                         startYear ? `${startYear} – Present` : ''
         
-        // Format exactly like PDF: | Job Title | dates (right-aligned)
+        // ATS-friendly format: Simple text with em dash separator
         if (dateRange) {
-          resume += `| ${jobTitle} | ${dateRange}\n`
+          resume += `${jobTitle} — ${dateRange}\n`
         } else {
-          resume += `| ${jobTitle} |\n`
+          resume += `${jobTitle}\n`
         }
         
-        // Company name on next line, uppercase and bold in PDF
+        // Company name on next line (uppercase and bold in PDF)
         resume += `${company.toUpperCase()}\n`
         
-        // Bullet list of achievements/responsibilities
+        // Bullet list of achievements/responsibilities (max 4-6 bullets)
         if (Array.isArray(achievements) && achievements.length > 0) {
-          achievements.forEach((achievement: string) => {
+          const maxBullets = 6
+          achievements.slice(0, maxBullets).forEach((achievement: string) => {
             if (achievement && achievement.trim()) {
               resume += `• ${achievement.trim()}\n`
             }
@@ -148,13 +158,13 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
       })
     }
 
-    // Skills (matching image structure: TECHNICAL SKILLS with categories)
+    // Skills - ATS-friendly bullet format
     if (dataToUse.skills && dataToUse.skills.length > 0) {
-      resume += `TECHNICAL SKILLS\n\n`
+      resume += `SKILLS\n\n`
       const skillsByCategory: { [key: string]: string[] } = {}
       dataToUse.skills.forEach((skill: any) => {
         const cat = skill.category || 'others'
-        // Map category names to match image format
+        // Map category names
         const categoryMap: { [key: string]: string } = {
           'programming': 'Programming',
           'tools': 'Tools',
@@ -167,11 +177,15 @@ export default function ResumePreview({ profileData, optimizedResume, liveData }
         skillsByCategory[displayCategory].push(skill.skill_name)
       })
 
+      // Format: • Category: item, item, item (1-2 lines max per category)
       Object.entries(skillsByCategory).forEach(([category, skillNames]) => {
         if (skillNames.length > 0) {
-          resume += `• ${category}: ${skillNames.join(', ')}\n\n`
+          const skillsText = skillNames.join(', ')
+          // Keep to 1-2 lines (approximately 80-100 characters per line)
+          resume += `• ${category}: ${skillsText}\n`
         }
       })
+      resume += `\n`
     }
 
     // Projects
