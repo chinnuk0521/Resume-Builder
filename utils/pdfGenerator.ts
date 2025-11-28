@@ -284,17 +284,19 @@ export async function generatePDF(textContent: string) {
         continue
       }
 
-      // ===== TABLE ROWS (Markdown format: | Left | Right |) =====
+      // ===== TABLE ROWS (Markdown format: | Left | Middle | Right |) =====
       if (line.startsWith('| ') && line.endsWith(' |') && line.includes(' | ')) {
         const cells = line.split('|').map(c => c.trim()).filter(c => c.length > 0)
         if (cells.length >= 2) {
           const leftCell = cells[0]
-          const rightCell = cells[1]
+          const middleCell = cells[1] || ''
+          const rightCell = cells[2] || '' // Dates for right alignment
           
-          // In Education section: left = school, right = location + dates
+          // In Education section: | University | Location | dates |
           if (currentSection === 'EDUCATION') {
-            // Draw school name on left (bold)
-            page.drawText(leftCell, {
+            // Draw university name on left (bold) with pipe format
+            const universityText = `| ${leftCell} |`
+            page.drawText(universityText, {
               x: SPACING.tableLeftMargin,
               y: yPosition,
               size: TYPOGRAPHY.company.size,
@@ -302,12 +304,28 @@ export async function generatePDF(textContent: string) {
               color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
             })
             
-            // Draw location and dates on right
-            if (rightCell) {
-              const rightWidth = font.widthOfTextAtSize(rightCell, TYPOGRAPHY.body.size)
-              const rightX = PAGE_CONFIG.width - SPACING.tableRightMargin - rightWidth
-              page.drawText(rightCell, {
-                x: rightX,
+            // Draw location in middle if present
+            let currentX = SPACING.tableLeftMargin + boldFont.widthOfTextAtSize(universityText, TYPOGRAPHY.company.size) + 8
+            if (middleCell && !middleCell.match(/\d{4}[-–—]/)) {
+              // Location (not dates)
+              const locationText = `${middleCell} |`
+              page.drawText(locationText, {
+                x: currentX,
+                y: yPosition,
+                size: TYPOGRAPHY.body.size,
+                font: font,
+                color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
+              })
+              currentX += font.widthOfTextAtSize(locationText, TYPOGRAPHY.body.size) + 8
+            }
+            
+            // Draw dates on right (right-aligned) - could be in middleCell or rightCell
+            const dateText = rightCell || (middleCell.match(/\d{4}[-–—]/) ? middleCell : '')
+            if (dateText) {
+              const dateWidth = font.widthOfTextAtSize(dateText, TYPOGRAPHY.body.size)
+              const dateX = PAGE_CONFIG.width - SPACING.tableRightMargin - dateWidth
+              page.drawText(dateText, {
+                x: dateX,
                 y: yPosition,
                 size: TYPOGRAPHY.body.size,
                 font: font,
@@ -315,16 +333,38 @@ export async function generatePDF(textContent: string) {
               })
             }
             
-          yPosition -= TYPOGRAPHY.body.lineHeight + 0.5
-          waitingForDateAfterUniversity = true
-          i++
-          continue
+            // Check if next line is a date (right-aligned on same line)
+            if (i + 1 < lines.length) {
+              const nextLine = lines[i + 1].trim()
+              if (nextLine.match(/\d{4}[-–—]\s*(\d{4}|present|current)/i)) {
+                // Draw date on right, same Y position as university line
+                const dateWidth = font.widthOfTextAtSize(nextLine, TYPOGRAPHY.body.size)
+                const dateX = PAGE_CONFIG.width - SPACING.tableRightMargin - dateWidth
+                page.drawText(nextLine, {
+                  x: dateX,
+                  y: yPosition, // Same Y as university line
+                  size: TYPOGRAPHY.body.size,
+                  font: font,
+                  color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
+                })
+                i += 2 // Skip both table row and date line
+              } else {
+                i++
+              }
+            } else {
+              i++
+            }
+            
+            yPosition -= TYPOGRAPHY.body.lineHeight + 0.5
+            waitingForDateAfterUniversity = true
+            continue
           }
           
-          // In Work Experience section: left = job title, right = location + dates
+          // In Work Experience section: | Job Title | dates |
           if (currentSection === 'WORK EXPERIENCE' || currentSection === 'EXPERIENCE') {
-            // Draw job title on left
-            page.drawText(leftCell, {
+            // Draw job title on left with pipe format
+            const jobTitleText = `| ${leftCell} |`
+            page.drawText(jobTitleText, {
               x: SPACING.tableLeftMargin,
               y: yPosition,
               size: TYPOGRAPHY.jobTitle.size,
@@ -332,12 +372,13 @@ export async function generatePDF(textContent: string) {
               color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
             })
             
-            // Draw location and dates on right
-            if (rightCell) {
-              const rightWidth = font.widthOfTextAtSize(rightCell, TYPOGRAPHY.body.size)
-              const rightX = PAGE_CONFIG.width - SPACING.tableRightMargin - rightWidth
-              page.drawText(rightCell, {
-                x: rightX,
+            // Draw dates on right (right-aligned) - could be in middleCell or rightCell
+            const dateText = rightCell || middleCell
+            if (dateText && dateText.match(/\d{4}[-–—]/)) {
+              const dateWidth = font.widthOfTextAtSize(dateText, TYPOGRAPHY.body.size)
+              const dateX = PAGE_CONFIG.width - SPACING.tableRightMargin - dateWidth
+              page.drawText(dateText, {
+                x: dateX,
                 y: yPosition,
                 size: TYPOGRAPHY.body.size,
                 font: font,
@@ -353,77 +394,28 @@ export async function generatePDF(textContent: string) {
         }
       }
 
-      // ===== COMPANY NAME (in WORK EXPERIENCE section) =====
+      // ===== COMPANY NAME (in WORK EXPERIENCE section) - should be uppercase and bold =====
       if ((currentSection === 'WORK EXPERIENCE' || currentSection === 'EXPERIENCE') && 
           !line.includes('—') && !line.includes('–') && 
           !line.startsWith('•') && 
+          !line.startsWith('|') &&
           !line.match(/\w+\s+\d{4}\s*[-–—]/) &&
           !line.match(/\d{4}\s*[-–—]/) &&
           !line.includes('||DATE:') &&
-          !waitingForDateAfterCompany &&
-          i > 0 && 
-          (lines[i-1] === '' || sectionHeaders.includes(lines[i-1]))) {
+          waitingForDateAfterCompany &&
+          i > 0) {
         
-        waitingForDateAfterCompany = true
-        waitingForDateAfterUniversity = false
-        
-        // Look ahead for dates
-        let foundDate = false
-        let dateLine = ''
-        let dateIdx = i + 1
-        
-        while (dateIdx < lines.length && dateIdx < i + 5) {
-          const testLine = lines[dateIdx].trim()
-          if (!testLine) {
-            dateIdx++
-            continue
-          }
-          if (testLine.match(/\w+\s+\d{4}\s*[-–—]\s*(\w+\s+\d{4}|present|current)/i) ||
-              testLine.match(/\d{4}\s*[-–—]\s*(\d{4}|present|current)/i)) {
-            foundDate = true
-            dateLine = testLine
-            break
-          }
-          if (testLine.startsWith('•') || sectionHeaders.includes(testLine)) {
-            break
-          }
-          dateIdx++
-        }
-        
-        if (foundDate) {
-          // Draw company name on left (bold)
-          page.drawText(line, {
-            x: PAGE_CONFIG.margin.left,
-            y: yPosition,
-            size: TYPOGRAPHY.company.size,
-            font: boldFont,
-            color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
-          })
-          
-          // Draw date on right, same line
-          const dateWidth = font.widthOfTextAtSize(dateLine, TYPOGRAPHY.body.size)
-          const dateX = PAGE_CONFIG.width - PAGE_CONFIG.margin.right - dateWidth
-          page.drawText(dateLine, {
-            x: dateX,
-            y: yPosition,
-            size: TYPOGRAPHY.body.size,
-            font: font,
-            color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
-          })
-          
-          i = dateIdx + 1
-          waitingForDateAfterCompany = false
-        } else {
-          // Just draw company name
-          page.drawText(line, {
-            x: PAGE_CONFIG.margin.left,
-            y: yPosition,
-            size: TYPOGRAPHY.company.size,
-            font: boldFont,
-            color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
-          })
-          i++
-        }
+        // Draw company name on left (uppercase and bold) - dates are already in table row
+        const companyText = line.toUpperCase()
+        page.drawText(companyText, {
+          x: PAGE_CONFIG.margin.left,
+          y: yPosition,
+          size: TYPOGRAPHY.company.size,
+          font: boldFont,
+          color: rgb(COLORS.text.r, COLORS.text.g, COLORS.text.b),
+        })
+        i++
+        waitingForDateAfterCompany = false
         yPosition -= TYPOGRAPHY.body.lineHeight + 0.5
         continue
       }
