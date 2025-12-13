@@ -35,3 +35,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# test files and sample PDFs
+# Keep test utilities in tests/ directory, but ignore sample PDFs
+tests/*.pdf
+*.pdf
+!public/**/*.pdf
+
